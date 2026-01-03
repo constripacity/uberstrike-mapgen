@@ -1,0 +1,16 @@
+{
+  "name": "UberStrikeGen.Tests",
+  "rootNamespace": "UnityAI.Tests",
+  "references": [
+    "UberStrikeGen.Runtime"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

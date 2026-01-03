@@ -1,0 +1,19 @@
+anthropic>=0.21.0
+diffusers>=0.20.0
+pywinauto>=0.6.8
+psutil>=5.9.0
+pillow>=10.0.0
+numpy>=1.24.0
+pyautogui>=0.9.54
+watchdog>=3.0.0
+rich>=13.0.0
+click>=8.1.0
+pyyaml>=6.0
+scikit-image>=0.21.0
+networkx>=3.1
+aiofiles>=23.0.0
+python-dotenv>=1.0.0
+flask>=2.3.2
+flask-socketio>=5.3.4
+eventlet>=0.33.3
+torch>=2.0.0; platform_system == "Linux" and platform_machine == "x86_64"

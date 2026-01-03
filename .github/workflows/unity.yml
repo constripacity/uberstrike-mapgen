@@ -1,0 +1,17 @@
+name: Unity
+
+on:
+  push:
+    branches: [ main, feature/** ]
+  pull_request:
+
+jobs:
+  sanity:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Unity sanity placeholder
+        run: |
+          echo "Unity CI requires a valid license; skipping build."
+          echo "Verify locally via Unity Editor: open UberStrikeGen and build scripts with asmdefs."

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>UberStrike Map Preview</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
+  </head>
+  <body>
+    <header>
+      <h1>UberStrike Map Preview</h1>
+      <p>Drop your exported <code>map.json</code> + <code>legend.png</code> to get an instant 3D preview, shareable link, and lightweight voting widget for the community.</p>
+    </header>
+
+    <main>
+      <section class="inputs">
+        <label class="file-picker">
+          <span>Map JSON</span>
+          <input type="file" id="jsonInput" accept="application/json" />
+        </label>
+        <label class="file-picker">
+          <span>Legend PNG</span>
+          <input type="file" id="legendInput" accept="image/png" />
+        </label>
+        <label class="file-picker">
+          <span>Stack / Blueprint JSON (optional)</span>
+          <input type="file" id="stackInput" accept="application/json" />
+        </label>
+        <button id="shareBtn" disabled>Copy Share Link</button>
+        <button id="exportBtn" disabled>Export to Unity Package</button>
+        <button id="voteBtn" disabled>👍 Vote</button>
+        <span id="voteCount"></span>
+      </section>
+
+      <section class="viewer">
+        <canvas id="scene"></canvas>
+        <aside>
+          <h2>Map Meta</h2>
+          <dl id="meta"></dl>
+        </aside>
+      </section>
+    </main>
+
+    <footer>
+      <small>Powered by Three.js + UberStrike MapGen. Votes are stored locally and can be synced manually via PRs.</small>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,39 @@
+﻿# Unity generated
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+
+# Large Unity files
+*.unity
+UberUnity/
+/Assets/UberUnity/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+*.env
+
+# Large files
+*.pak
+*.exe
+*.dll
+*.dat
+*.asar
+
+# IDE
+.vs/
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+.DS_Store
+
+/Assets/_Generated/Maps/

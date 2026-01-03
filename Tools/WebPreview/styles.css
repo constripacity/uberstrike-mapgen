@@ -1,0 +1,94 @@
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #0d1117;
+  color: #e6edf3;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+header, footer {
+  padding: 1.5rem 2rem;
+  background: #161b22;
+  border-bottom: 1px solid #21262d;
+}
+footer {
+  border-top: 1px solid #21262d;
+  border-bottom: none;
+  margin-top: auto;
+}
+main {
+  padding: 1.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+.inputs {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.file-picker {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  background: #1f2937;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px dashed #2d3748;
+}
+.file-picker input {
+  color: #9ca3af;
+}
+.viewer {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1rem;
+  min-height: 480px;
+}
+#scene {
+  width: 100%;
+  height: 100%;
+  background: #050709;
+  border-radius: 0.75rem;
+}
+aside {
+  background: #111827;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  border: 1px solid #1f2937;
+}
+dl {
+  margin: 0;
+}
+dl dt {
+  font-weight: 600;
+  margin-top: 0.5rem;
+}
+dl dd {
+  margin: 0;
+  margin-left: 0;
+  color: #9ca3af;
+}
+button {
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+button:disabled {
+  background: #475569;
+  cursor: not-allowed;
+}
+@media (max-width: 900px) {
+  .viewer {
+    grid-template-columns: 1fr;
+  }
+}

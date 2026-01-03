@@ -1,0 +1,8 @@
+{
+  "mpp": 1.0,
+  "wallHeight": 4.0,
+  "maxObjects": 2000,
+  "theme": "Assets/_UberStrike/Theme/DefaultTheme.asset",
+  "gameplaySet": "Assets/_UberStrike/Gameplay/DefaultGameplaySet.asset",
+  "notes": "sanity build"
+}

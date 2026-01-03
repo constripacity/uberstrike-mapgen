@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1a4f7d70c6ae4f6e9fdc86a5803ddde8, type: 3}
+  m_Name: DefaultTheme
+  m_EditorClassIdentifier: 
+  WallMat: {fileID: 0}
+  FloorMat: {fileID: 0}
+  PlatformMat: {fileID: 0}
+  FogColor: {r: 0.1, g: 0.1, b: 0.2, a: 1}
+  FogDensity: 0.02
+  JumpPadMat: {fileID: 0}
+  TeleporterMat: {fileID: 0}
+  SpawnMat: {fileID: 0}
+  PickupMat: {fileID: 0}

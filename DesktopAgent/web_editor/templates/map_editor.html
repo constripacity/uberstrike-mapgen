@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>UberStrike Web Map Editor</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js" integrity="sha384-hanZ90unfG0KBPXn1HULICwhf66A1VpzwuNFuIBqmoeZaZX6mE6xPD58Ll35H5T6" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r150/three.min.js" integrity="sha512-h6+1n4MBJXZQ9II5jnNjnmqkHnyOCQ2M4qTnD6uWz0WYJbV6kUuFp3t9pZug1oa8a4Z45gLNmBGG99nmHn7fvg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #111; color: #f0f0f0; }
+        header { padding: 16px; background: #1f1f1f; display: flex; align-items: center; justify-content: space-between; }
+        header h1 { margin: 0; font-size: 20px; }
+        #content { display: flex; }
+        #layers { width: 420px; padding: 16px; overflow-y: auto; background: #181818; }
+        .layer-panel { margin-bottom: 16px; padding: 12px; border: 1px solid #333; border-radius: 8px; background: #202020; }
+        canvas.layer { width: 256px; height: 256px; border: 1px solid #333; image-rendering: pixelated; display: block; margin-bottom: 8px; }
+        #preview3d { flex: 1; height: calc(100vh - 64px); background: #000; }
+        button { margin-right: 8px; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; }
+        button.primary { background: #0a84ff; color: white; }
+        button.secondary { background: #444; color: white; }
+        .toolbar { margin-top: 8px; }
+    </style>
+</head>
+<body>
+<header>
+    <h1>UberStrike Collaborative Map Editor</h1>
+    <div>
+        <input id="prompt" type="text" placeholder="Describe your map..." size="40" />
+        <button class="primary" onclick="generateFromPrompt()">Generate</button>
+        <button class="secondary" onclick="loadStacks()">Refresh</button>
+    </div>
+</header>
+<div id="content">
+    <div id="layers">
+        <div class="layer-panel">
+            <strong>Available Stacks</strong>
+            <ul id="stack-list"></ul>
+        </div>
+        <div id="layer-canvases"></div>
+    </div>
+    <div id="preview3d"></div>
+</div>
+
+<script>
+const socket = io();
+let currentStackPath = null;
+
+function loadStacks() {
+    fetch('/api/maps').then(r => r.json()).then(stacks => {
+        const list = document.getElementById('stack-list');
+        list.innerHTML = '';
+        stacks.forEach(stack => {
+            const item = document.createElement('li');
+            const link = document.createElement('a');
+            link.href = '#';
+            link.textContent = stack;
+            link.onclick = () => loadStack(stack);
+            item.appendChild(link);
+            list.appendChild(item);
+        });
+    });
+}
+
+function loadStack(name) {
+    fetch('/api/load', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name })
+    }).then(r => r.json()).then(data => {
+        currentStackPath = data.path;
+        renderLayers(data.layers);
+        updatePreview();
+    });
+}
+
+function generateFromPrompt() {
+    const prompt = document.getElementById('prompt').value;
+    fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt })
+    }).then(r => r.json()).then(data => {
+        currentStackPath = data.path;
+        renderLayers(data.layers);
+        updatePreview();
+        loadStacks();
+    });
+}
+
+function renderLayers(layers) {
+    const container = document.getElementById('layer-canvases');
+    container.innerHTML = '';
+    Object.entries(layers).forEach(([name, data]) => {
+        const panel = document.createElement('div');
+        panel.className = 'layer-panel';
+        const title = document.createElement('strong');
+        title.textContent = name;
+        const canvas = document.createElement('canvas');
+        canvas.width = 256;
+        canvas.height = 256;
+        canvas.className = 'layer';
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        img.onload = () => ctx.drawImage(img, 0, 0, 256, 256);
+        img.src = 'data:image/png;base64,' + data;
+        canvas.addEventListener('click', (evt) => onCanvasClick(canvas, name, evt));
+        panel.appendChild(title);
+        panel.appendChild(canvas);
+        panel.appendChild(createToolbar(name));
+        container.appendChild(panel);
+    });
+}
+
+function createToolbar(layerName) {
+    const div = document.createElement('div');
+    div.className = 'toolbar';
+    const button = document.createElement('button');
+    button.className = 'secondary';
+    button.textContent = 'Toggle';
+    button.onclick = () => toggleLayerVisibility(layerName);
+    div.appendChild(button);
+    return div;
+}
+
+function onCanvasClick(canvas, layer, evt) {
+    if (!currentStackPath) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = Math.floor((evt.clientX - rect.left) * (canvas.width / rect.width));
+    const y = Math.floor((evt.clientY - rect.top) * (canvas.height / rect.height));
+    const color = [255, 0, 0, 255];
+    socket.emit('edit_pixel', { stack_path: currentStackPath.replace('.stack.json', ''), layer, x, y, color });
+}
+
+socket.on('pixel_updated', data => {
+    if (!currentStackPath || !data.layer) return;
+    loadStack(currentStackPath.split('/').pop());
+});
+
+function updatePreview() {
+    const container = document.getElementById('preview3d');
+    container.innerHTML = '';
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    container.appendChild(renderer.domElement);
+
+    const ambient = new THREE.AmbientLight(0x888888);
+    scene.add(ambient);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(20, 50, 20);
+    scene.add(dirLight);
+
+    const grid = new THREE.GridHelper(200, 20, 0x444444, 0x222222);
+    scene.add(grid);
+
+    camera.position.set(80, 120, 80);
+    camera.lookAt(0, 0, 0);
+
+    function animate() {
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+    }
+    animate();
+}
+
+function toggleLayerVisibility(layer) {
+    console.log('Toggle layer', layer);
+}
+
+loadStacks();
+updatePreview();
+</script>
+</body>
+</html>

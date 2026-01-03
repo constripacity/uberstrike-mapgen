@@ -1,0 +1,21 @@
+unity:
+  project_path: "C:/UberStrikeGen"
+  log_path: "C:/UberStrikeGen/Logs/Editor.log"
+  blueprints_path: "C:/UberStrikeGen/Assets/_UberStrike/Blueprints"
+  stacks_path: "C:/UberStrikeGen/Assets/_UberStrike/Blueprints/Stacks"
+
+monitoring:
+  check_interval: 0.5  # seconds
+  auto_fix: true
+  notify_on_fix: true
+
+generation:
+  default_size: 256
+  meters_per_pixel: 1.0
+  wall_height: 4.0
+
+fixes:
+  wall_height_value: 4.0
+  skip_cyan: true
+  min_spawns: 4
+  max_lights: 50
