@@ -1,0 +1,17 @@
+Name,SizeX,SizeY,SizeZ,Source
+teleport.prefab,12.000,1.000,12.000,BoxCollider
+Respawn.prefab,0.000,0.000,0.000,Unknown
+Armor_base.prefab,0.000,0.000,0.000,Unknown
+CannonAMMO.prefab,1.270,0.881,1.250,BoxCollider
+HandgunAMMO.prefab,0.930,0.373,1.000,BoxCollider
+LauncherAMMO.prefab,1.470,0.470,1.320,BoxCollider
+MachinegunAMMO.prefab,1.300,0.499,1.450,BoxCollider
+PickupWEAPON.prefab,0.000,0.000,0.000,Unknown
+ShotgunAMMO.prefab,1.250,0.356,1.250,BoxCollider
+SniperAMMO.prefab,1.060,0.653,1.020,BoxCollider
+SplattergunAMMO.prefab,1.190,0.407,1.130,BoxCollider
+Floating_pad.prefab,2.000,0.438,2.000,BoxCollider
+JumpPad.prefab,1.946,0.615,1.946,BoxCollider
+jumpPadCATALYST.prefab,1.946,0.480,1.946,BoxCollider
+JumpPadCYAN.prefab,1.946,0.350,1.946,BoxCollider
+JumpPadYELLOW.prefab,1.946,0.350,1.946,BoxCollider

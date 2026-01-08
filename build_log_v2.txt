@@ -1,0 +1,7 @@
+[GenMap] Running Headless Builder...
+[GenMap] Project: C:\Users\Shadow\Desktop\uberstrike-mapgen\MapGen_Project\scripts\..
+The system cannot find the path specified.
+
+[GenMap] Done.
+
+[GenMap] Done.

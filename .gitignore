@@ -8,7 +8,9 @@
 [Uu]ser[Ss]ettings/
 
 # Large Unity files
-*.unity
+# *.unity # Don't ignore all scenes
+Assets/_Generated/**/*.unity
+MapGen_Project/Assets/_Generated/**/*.unity
 UberUnity/
 /Assets/UberUnity/
 
@@ -22,8 +24,12 @@ venv/
 
 # Large files
 *.pak
-*.exe
-*.dll
+# *.exe # Scope to builds
+# *.dll # Scope to builds
+Build/**/*.exe
+Build/**/*.dll
+Output/**/*.exe
+Output/**/*.dll
 *.dat
 *.asar
 
@@ -37,3 +43,13 @@ Thumbs.db
 .DS_Store
 
 /Assets/_Generated/Maps/
+
+# DesktopAgent Artifacts
+datasets/
+models/
+*.pkl
+*.npy
+*.npz
+debug_*.py
+debug_*.txt
+Output/

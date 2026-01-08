@@ -1,0 +1,67 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MapGen Stack Definition",
+  "type": "object",
+  "required": [
+    "sourceName",
+    "directory",
+    "layoutPath"
+  ],
+  "properties": {
+    "sourceName": {
+      "type": "string",
+      "description": "Unique identifier for the map source"
+    },
+    "directory": {
+      "type": "string",
+      "description": "Base directory for relative paths (usually '.')"
+    },
+    "layoutPath": {
+      "type": "string",
+      "description": "Path to the main geometry layout PNG"
+    },
+    "heightPath": {
+      "type": "string",
+      "description": "Path to the heightmap PNG"
+    },
+    "flowPath": {
+      "type": "string",
+      "description": "Path to the gameplay entities PNG"
+    },
+    "themePath": {
+      "type": "string",
+      "description": "Path to the biome/theme mask PNG"
+    },
+    "lightingPath": {
+      "type": "string",
+      "description": "Path to the lighting hints PNG"
+    },
+    "collisionPath": {
+      "type": "string",
+      "description": "Path to collision overrides PNG"
+    },
+    "metersPerPixel": {
+      "type": "number",
+      "minimum": 0.01,
+      "default": 0.2
+    },
+    "wallHeight": {
+      "type": "number",
+      "minimum": 0.1,
+      "default": 4.0
+    },
+    "heightScale": {
+      "type": "number",
+      "minimum": 0.0,
+      "default": 1.0
+    },
+    "navmesh": {
+      "type": "boolean",
+      "default": true
+    },
+    "pairTeleporters": {
+      "type": "boolean",
+      "default": true
+    }
+  }
+}

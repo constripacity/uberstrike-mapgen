@@ -1,0 +1,81 @@
+{
+  "metersPerPixel": 0.2,
+  "wallHeight": 4.0,
+  "prefabs": {
+    "teleport.prefab": {
+      "path": "/Assets/Gameplay/teleport.prefab",
+      "cat": "Teleport"
+    },
+    "Respawn.prefab": {
+      "path": "/Assets/LibraryAssets/ParticlePack/EffectExamples/Misc Effects/Prefabs/Respawn.prefab",
+      "cat": "Spawn"
+    },
+    "Armor_base.prefab": {
+      "path": "/Assets/Prefabs/Pickups/Armor_base.prefab",
+      "cat": "Pickup"
+    },
+    "CannonAMMO.prefab": {
+      "path": "/Assets/Prefabs/Pickups/CannonAMMO.prefab",
+      "cat": "Pickup"
+    },
+    "HandgunAMMO.prefab": {
+      "path": "/Assets/Prefabs/Pickups/HandgunAMMO.prefab",
+      "cat": "Pickup"
+    },
+    "LauncherAMMO.prefab": {
+      "path": "/Assets/Prefabs/Pickups/LauncherAMMO.prefab",
+      "cat": "Pickup"
+    },
+    "MachinegunAMMO.prefab": {
+      "path": "/Assets/Prefabs/Pickups/MachinegunAMMO.prefab",
+      "cat": "Pickup"
+    },
+    "PickupWEAPON.prefab": {
+      "path": "/Assets/Prefabs/Pickups/PickupWEAPON.prefab",
+      "cat": "Pickup"
+    },
+    "ShotgunAMMO.prefab": {
+      "path": "/Assets/Prefabs/Pickups/ShotgunAMMO.prefab",
+      "cat": "Pickup"
+    },
+    "SniperAMMO.prefab": {
+      "path": "/Assets/Prefabs/Pickups/SniperAMMO.prefab",
+      "cat": "Pickup"
+    },
+    "SplattergunAMMO.prefab": {
+      "path": "/Assets/Prefabs/Pickups/SplattergunAMMO.prefab",
+      "cat": "Pickup"
+    },
+    "Floating_pad.prefab": {
+      "path": "/Assets/Prefabs/Powerups/Floating_pad.prefab",
+      "cat": "Jump"
+    },
+    "JumpPad.prefab": {
+      "path": "/Assets/Prefabs/Powerups/JumpPad.prefab",
+      "cat": "Jump"
+    },
+    "jumpPadCATALYST.prefab": {
+      "path": "/Assets/Prefabs/Powerups/jumpPadCATALYST.prefab",
+      "cat": "Jump"
+    },
+    "JumpPadCYAN.prefab": {
+      "path": "/Assets/Prefabs/Powerups/JumpPadCYAN.prefab",
+      "cat": "Jump"
+    },
+    "JumpPadYELLOW.prefab": {
+      "path": "/Assets/Prefabs/Powerups/JumpPadYELLOW.prefab",
+      "cat": "Jump"
+    }
+  },
+  "layers": {
+    "0": "Default",
+    "1": "TransparentFX",
+    "2": "Ignore Raycast",
+    "3": "Water",
+    "4": "UI",
+    "5": "Lighting",
+    "6": "Ground",
+    "7": "Postprocessing",
+    "8": "Distortion"
+  }
+}

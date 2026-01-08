@@ -1,0 +1,24 @@
+CMD: powershell -ExecutionPolicy Bypass -File C:\Users\Shadow\Desktop\uberstrike-mapgen\MapGen_Project\scripts\gen_map.ps1 -stack  UberStrikeGen/Assets/_UberStrike/Blueprints/Stacks/ArenaStack_Sample.stack.json -outDir Assets/_Generated/IntegrationTest
+UNITY_EXE=C:\Program Files\Unity\Hub\Editor\6000.0.24f1\Editor\Unity.exe 
+
+C:\Users\Shadow\Deskt
+op\uberstrike-mapgen\
+MapGen_Project\script
+s\gen_map.ps1 : 
+Unity executable not 
+found at C:\Program F
+iles\Unity\Hub\Editor
+\6000.0.24f1\Editor\U
+nity.exe 
+    + CategoryInfo   
+           : NotSpe  
+  cified: (:) [Wri   
+ te-Error], Write    
+ErrorException
+    + FullyQualified 
+   ErrorId : Micros  
+  oft.PowerShell.C   
+ ommands.WriteErr    
+orException,gen_    
+map.ps1
+ 
