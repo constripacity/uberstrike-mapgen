@@ -19,7 +19,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install numpy scipy pillow networkx matplotlib pytest ruff
+          pip install -r DesktopAgent/requirements.txt
+          pip install pytest ruff
       - name: Lint
         run: |
           ruff check DesktopAgent/agent/tools/wave_function_collapse.py \
