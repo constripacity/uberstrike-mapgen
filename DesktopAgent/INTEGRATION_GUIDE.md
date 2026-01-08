@@ -47,3 +47,60 @@ python DesktopAgent/run_assistant.py build \
 4.  **Unity**: `HeadlessBuilder.cs` loads assets, builds map, saves scene.
 5.  **Report**: `build_report.json` is written to `out-dir`.
 6.  **Agent**: Reads report and returns verification stats.
+
+## 📦 Deploy Command (Mission 9C)
+
+Deploy generated AssetBundles to the UberStrikeGen runtime directory.
+
+### Usage
+```bash
+python DesktopAgent/run_assistant.py deploy [OPTIONS]
+```
+
+### Options
+| Flag | Description | Required | Default |
+| :--- | :--- | :---: | :---: |
+| `--report` | Path to `build_report.json` | ✅* | - |
+| `--bundle` | Path to bundle file (overrides report) | ✅* | - |
+| `--target-dir` | Game data directory to deploy to | ✅ | - |
+| `--backup/--no-backup` | Create timestamped backups | ❌ | True |
+
+*Either `--report` or `--bundle` is required.
+
+### Recommended Target
+```bash
+--target-dir "UberStrikeGen/Assets/StreamingAssets/MapBundles"
+```
+
+### Examples
+```bash
+# Deploy using build report (recommended)
+python DesktopAgent/run_assistant.py deploy \
+  --report "MapGen_Project/Assets/_Generated/RuntimeTest/build_report.json" \
+  --target-dir "UberStrikeGen/Assets/StreamingAssets/MapBundles"
+
+# Deploy with explicit bundle path
+python DesktopAgent/run_assistant.py deploy \
+  --bundle "path/to/map_verificationmap" \
+  --target-dir "UberStrikeGen/Assets/StreamingAssets/MapBundles"
+
+# Deploy without backups (not recommended)
+python DesktopAgent/run_assistant.py deploy \
+  --report "..." \
+  --target-dir "..." \
+  --no-backup
+```
+
+### How It Works
+1. **Path Resolution**: Uses `bundleDiskPath` (absolute) from report first, falls back to `repo_root + bundlePath` resolution
+2. **Backup**: Creates timestamped `.bak_YYYYMMDD_HHMMSS` files before overwriting
+3. **Manifest**: Automatically deploys `.manifest` file alongside bundle
+4. **Validation**: Clear error messages if bundle cannot be resolved
+
+### Bundle Naming
+- AssetBundles are extensionless by default (e.g., `map_verificationmap`)
+- This is standard Unity behavior and valid for runtime loading
+- Optional: Add `.bundle` extension if you prefer explicit naming
+
+### Runtime Loader Required
+**Important**: Deploy only copies files. UberStrikeGen requires a runtime loader script to discover and load bundles from `StreamingAssets/MapBundles`. See UberStrikeGen documentation for loader implementation.
