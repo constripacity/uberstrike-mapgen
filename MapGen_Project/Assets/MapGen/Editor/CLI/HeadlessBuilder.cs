@@ -4,6 +4,7 @@ using UnityEditor.SceneManagement;
 using System;
 using System.IO;
 using System.Collections.Generic;
+using UnityEditor.Build.Pipeline;
 using MapGen.Core;
 
 namespace MapGen.Editor.CLI
@@ -30,6 +31,13 @@ namespace MapGen.Editor.CLI
             
             // Timing
             public double loadMs, buildMs, saveMs;
+            
+            // Bundle
+            public bool buildBundle;
+            public string bundleTarget;
+            public string bundleDir;
+            public string bundleName;
+            public string bundlePath;
         }
 
         public static void Build()
@@ -191,13 +199,88 @@ namespace MapGen.Editor.CLI
                     EditorSceneManager.SaveScene(newScene, finalScenePath);
                     report.scenePath = finalScenePath;
                     report.saveMs = watch.Elapsed.TotalMilliseconds;
+
+                    // 6b. Build Bundle Logic
+                    string buildBundleStr = Arg("-buildBundle") ?? Arg("--buildBundle");
+                    bool buildBundle = !string.IsNullOrEmpty(buildBundleStr) && buildBundleStr != "0" && buildBundleStr.ToLower() != "false";
+
+                    if (buildBundle)
+                    {
+                        report.buildBundle = true;
+                        
+                        string bundleTargetStr = Arg("-bundleTarget") ?? Arg("--bundleTarget");
+                        if (string.IsNullOrEmpty(bundleTargetStr)) bundleTargetStr = "StandaloneWindows64";
+                        report.bundleTarget = bundleTargetStr;
+                        
+                        var target = ParseBuildTarget(bundleTargetStr);
+                        
+                        string bundleOutDir = Arg("-bundleOutDir") ?? Arg("--bundleOutDir");
+                        
+                        // Default logic
+                        string unityBundleDir;
+                        if (string.IsNullOrEmpty(bundleOutDir))
+                        {
+                            unityBundleDir = $"Assets/_Generated/Bundles/{def.sourceName}";
+                        }
+                        else 
+                        {
+                            // If user specified OutDir, check if inside project
+                            string pRoot = Path.GetFullPath(Application.dataPath).Replace("/Assets", "").Replace("\\Assets", "");
+                            string absBd = Path.GetFullPath(bundleOutDir);
+                            if (absBd.StartsWith(pRoot, StringComparison.OrdinalIgnoreCase))
+                            {
+                                // Inside project
+                                if (absBd.StartsWith(Path.GetFullPath(Application.dataPath), StringComparison.OrdinalIgnoreCase)) {
+                                    unityBundleDir = "Assets" + absBd.Substring(Path.GetFullPath(Application.dataPath).Length).Replace("\\", "/");
+                                } else {
+                                     // Project root but not assets?
+                                     unityBundleDir = $"Assets/_Generated/Bundles/{def.sourceName}";
+                                }
+                            }
+                            else
+                            {
+                                Warn(ref report, "External bundleOutDir not supported securely. Using internal default.");
+                                unityBundleDir = $"Assets/_Generated/Bundles/{def.sourceName}";
+                            }
+                        }
+                        
+                        // Create Dirs
+                        if (!Directory.Exists(unityBundleDir)) Directory.CreateDirectory(unityBundleDir);
+                        
+                        string bundleName = $"map_{def.sourceName.ToLowerInvariant()}";
+                        report.bundleName = bundleName;
+                        report.bundleDir = unityBundleDir;
+                        
+                        // AssetBundleBuild
+                        string sceneRelPath = finalScenePath.Replace("\\", "/"); 
+                        // Ensure it starts with Assets
+                        if (!sceneRelPath.StartsWith("Assets")) sceneRelPath = "Assets/" + sceneRelPath; // Robustness
+                        
+                        AssetBundleBuild[] buildMap = new AssetBundleBuild[1];
+                        buildMap[0].assetBundleName = bundleName;
+                        buildMap[0].assetNames = new string[] { sceneRelPath };
+                        
+                        var manifest = BuildPipeline.BuildAssetBundles(unityBundleDir, buildMap, BuildAssetBundleOptions.ChunkBasedCompression, target);
+                        
+                        if (manifest != null)
+                        {
+                            // Success
+                            string diskPath = Path.Combine(unityBundleDir, bundleName);
+                            report.bundlePath = diskPath;
+                            Console.WriteLine($"[HeadlessBuilder] Bundle built: {diskPath}");
+                        }
+                        else
+                        {
+                             Error(ref report, "BuildPipeline.BuildAssetBundles returned null.");
+                        }
+                    }
                     
-                    // 7. Write Report (To requested outDir)
+            // 7. Write Report (To requested outDir)
                     if (!Directory.Exists(absOutDir)) Directory.CreateDirectory(absOutDir);
-                    string reportPath = Path.Combine(absOutDir, "build_report.json");
-                    File.WriteAllText(reportPath, JsonUtility.ToJson(report, true));
+                    string rPath = Path.Combine(absOutDir, "build_report.json");
+                    File.WriteAllText(rPath, JsonUtility.ToJson(report, true));
                     
-                    Console.WriteLine($"[HeadlessBuilder] Report saved to {reportPath}");
+                    Console.WriteLine($"[HeadlessBuilder] Report saved to {rPath}");
                 }
                 else
                 {
@@ -216,6 +299,12 @@ namespace MapGen.Editor.CLI
             
             Console.WriteLine($"[HeadlessBuilder] Finished with status: {report.status} (Code {code})");
             Exit(code);
+        }
+
+        private static BuildTarget ParseBuildTarget(string s)
+        {
+            try { return (BuildTarget)Enum.Parse(typeof(BuildTarget), s, true); }
+            catch { return BuildTarget.StandaloneWindows64; }
         }
 
         private static string Arg(string name)

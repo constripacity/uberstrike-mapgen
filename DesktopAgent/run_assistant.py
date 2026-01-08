@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
-import collections
 import asyncio
+import collections
+import json
 import logging
+import shutil
 import sys
 import os
 import platform
@@ -82,9 +84,12 @@ def fix() -> None:
 @click.option("--analyze/--no-analyze", default=True, help="Run QC analysis before build")
 @click.option("--auto-fix", is_flag=True, help="Automatically fix issues found by analysis")
 @click.option("--write-fixed-to", default=None, help="Save fixed blueprint to specific path (default: temp)")
+@click.option("--bundle", is_flag=True, help="Build AssetBundle for Runtime")
+@click.option("--target", default="StandaloneWindows64", help="Build Target (default: StandaloneWindows64)")
 def build(stack: str, out_dir: str, theme: Optional[str], ubervocab: Optional[str], seed: Optional[int], 
           use_ps1: bool, unity_log: Optional[str], open_folder: bool,
-          analyze: bool, auto_fix: bool, write_fixed_to: Optional[str]) -> None:
+          analyze: bool, auto_fix: bool, write_fixed_to: Optional[str],
+          bundle: bool, target: str) -> None:
     """Run Unity Headless Builder to generate a map."""
     
     stack_path = Path(stack).resolve()
@@ -165,7 +170,9 @@ def build(stack: str, out_dir: str, theme: Optional[str], ubervocab: Optional[st
         ubervocab=ubervocab,
         seed=seed,
         use_ps1=use_ps1,
-        unity_log=unity_log
+        unity_log=unity_log,
+        bundle=bundle,
+        bundle_target=target
     )
     
     status = result.get("status", "fail")
@@ -181,6 +188,8 @@ def build(stack: str, out_dir: str, theme: Optional[str], ubervocab: Optional[st
          
     if "scenePath" in result:
         click.echo(f" Scene:  {result['scenePath']}")
+    if "bundlePath" in result:
+        click.secho(f" Bundle: {result['bundlePath']}", fg="cyan")
         
     click.echo("-" * 40)
     
@@ -378,6 +387,86 @@ def predict(stack: str, model: str) -> None:
     except Exception as e:
          click.secho(f"Prediction failed: {e}", fg="red")
          sys.exit(1)
+
+
+@cli.command()
+@click.option("--bundle", "bundle_path", help="Path to bundle file")
+@click.option("--report", "report_path", help="Path to build_report.json")
+@click.option("--target-dir", required=True, help="Game Data Directory to deploy to")
+def deploy(bundle_path: Optional[str], report_path: Optional[str], target_dir: str) -> None:
+    """Deploy generated map to game."""
+    
+    tgt = Path(target_dir).resolve()
+    if not tgt.exists():
+        click.secho(f"Creating target directory: {tgt}", fg="yellow")
+        tgt.mkdir(parents=True, exist_ok=True)
+        
+    src_bundle = None
+    src_manifest = None
+    
+    # Resolve Source
+    if report_path:
+        rp = Path(report_path).resolve()
+        if not rp.exists():
+            click.secho(f"Report not found: {rp}", fg="red")
+            sys.exit(1)
+            
+        with open(rp, "r") as f:
+            data = json.load(f)
+            
+        if "bundlePath" not in data:
+            click.secho("Report does not contain bundle info.", fg="red")
+            sys.exit(1)
+            
+        # Unity path usually relative or absolute. 
+        # Best to rely on relative path from project root if absolute fails?
+        # Actually pipeline returns 'bundlePath' which is constructed as Path.Combine(unityBundleDir, bundleName)
+        # But unityBundleDir was "Assets/..."
+        # So we need to find the project root + that path.
+        
+        # Simpler: If bundlePath exists as absolute, use it.
+        # If not, try relative to report location? No, report is in outDir.
+        # Bundle is in project. 
+        # Actually HeadlessBuilder prints absolute path if possible or relative.
+        # Let's try to interpret it.
+        
+        candidate = Path(data["bundlePath"])
+        if candidate.exists():
+            src_bundle = candidate
+        else:
+             # Try relative to project? We don't know project loc easily here.
+             # User should use --bundle if report path is obscure.
+             click.secho(f"Could not resolve bundle path from report: {data['bundlePath']}", fg="yellow")
+             click.echo("Trying manual resolution...")
+             # Maybe report has resolved_out_dir?
+             pass
+
+    if bundle_path and not src_bundle:
+        bp = Path(bundle_path).resolve()
+        if bp.exists():
+            src_bundle = bp
+            
+    if not src_bundle:
+        click.secho("Error: Could not locate bundle file. Provide --bundle or valid --report.", fg="red")
+        sys.exit(1)
+        
+    # Manifest
+    candidate_manifest = src_bundle.parent / (src_bundle.name + ".manifest")
+    if candidate_manifest.exists():
+        src_manifest = candidate_manifest
+        
+    # Deploy
+    click.echo(f"Deploying {src_bundle.name} -> {tgt}")
+    
+    try:
+        shutil.copy2(src_bundle, tgt / src_bundle.name)
+        if src_manifest:
+            shutil.copy2(src_manifest, tgt / src_manifest.name)
+            
+        click.secho("✓ Success", fg="green")
+    except Exception as e:
+        click.secho(f"Deploy failed: {e}", fg="red")
+        sys.exit(1)
 
 
 @cli.command()

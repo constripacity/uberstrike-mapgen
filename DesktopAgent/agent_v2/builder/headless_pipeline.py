@@ -89,7 +89,10 @@ class HeadlessPipeline:
                   ubervocab: Optional[str] = None, 
                   seed: Optional[int] = None,
                   use_ps1: bool = False,
-                  unity_log: Optional[str] = None) -> Dict[str, Any]:
+                  unity_log: Optional[str] = None,
+                  bundle: bool = False,
+                  bundle_target: str = "StandaloneWindows64",
+                  bundle_out_dir: Optional[str] = None) -> Dict[str, Any]:
         
         unity_exe = self.find_unity_exe()
         if unity_exe:
@@ -147,6 +150,13 @@ class HeadlessPipeline:
             cmd.extend(["-ubervocab", ubervocab])
         if seed is not None:
              cmd.extend(["-seed", str(seed)])
+
+        # Bundle Args
+        if bundle:
+            cmd.extend(["-buildBundle", "1"])
+            cmd.extend(["-bundleTarget", bundle_target])
+            if bundle_out_dir:
+                 cmd.extend(["-bundleOutDir", bundle_out_dir])
 
         # Determine log path
         # If logging to out_dir, use fs_out_dir

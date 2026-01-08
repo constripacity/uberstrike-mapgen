@@ -1,0 +1,9 @@
+DIRECT: DesktopAgent\run_assistant.py
+TYPE_CHECKING: DesktopAgent\agent_v2\analyzer\quality_analyzer.py
+DIRECT: DesktopAgent\agent_v2\dataset\exporter.py
+TYPE_CHECKING: DesktopAgent\agent_v2\dataset\feature_extractors.py
+TYPE_CHECKING: DesktopAgent\agent_v2\fixer\blueprint_sanitizer.py
+TYPE_CHECKING: DesktopAgent\agent_v2\mutator\blueprint_mutator.py
+DIRECT: DesktopAgent\tests\test_exporter.py
+DIRECT: DesktopAgent\tests\test_sanitizer.py
+DIRECT: DesktopAgent\tests\test_stack_io.py

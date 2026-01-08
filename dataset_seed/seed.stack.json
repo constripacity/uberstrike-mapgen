@@ -1,0 +1,37 @@
+{
+  "metersPerPixel": 1.0,
+  "wallHeight": 4.0,
+  "heightScale": 0.05,
+  "stairsRise": 0.25,
+  "rampMaxSlopeDeg": 25,
+  "doorWidthMeters": 2.0,
+  "bridgeWidthMeters": 3.0,
+  "pairTeleporters": true,
+  "navmesh": true,
+  "themeDefault": "DefaultTheme",
+  "themeMap": {
+    "#222222": "Industrial",
+    "#554433": "Warehouse",
+    "#334455": "BlueSteel"
+  },
+  "flow": {
+    "spawnColorYellow": "#FFFF00",
+    "spawnColorRed": "#FF0000",
+    "spawnColorGreen": "#00FF00",
+    "chokeColor": "#FFA500",
+    "coverColor": "#808080",
+    "arrowColor": "#00FFFF"
+  },
+  "lighting": {
+    "pointColor": "#FFFFFF",
+    "spotColor": "#FFD080",
+    "sunDirDeg": [50, -30, 0],
+    "fogDensity": 0.02
+  },
+  "collision": {
+    "walkable": "#FFFFFF",
+    "blocked": "#000000",
+    "climbable": "#00AAFF",
+    "destructible": "#FF00FF"
+  }
+}

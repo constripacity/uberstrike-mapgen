@@ -9,7 +9,9 @@
 
 # Large Unity files
 # *.unity # Don't ignore all scenes
-Assets/_Generated/**/*.unity
+**/Assets/_Generated/Bundles/
+**/Assets/_Generated/Maps/
+Assets/_Generated/
 MapGen_Project/Assets/_Generated/**/*.unity
 UberUnity/
 /Assets/UberUnity/
