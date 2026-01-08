@@ -12,7 +12,7 @@ from PIL import Image
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from agent_v2.dataset.exporter import DatasetExporter
-from agent_v2.blueprints.stack_io import BlueprintStack
+# from agent_v2.blueprints.stack_io import BlueprintStack # Unused (stack loaded implicitly by exporter)
 from agent_v2.dataset import schema
 
 class TestExporter(unittest.TestCase):

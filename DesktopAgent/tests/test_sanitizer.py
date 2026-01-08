@@ -7,7 +7,7 @@ from unittest.mock import MagicMock
 # Add parent dir to path to find agent_v2
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
-from agent_v2.blueprints.stack_io import BlueprintStack
+# from agent_v2.blueprints.stack_io import BlueprintStack # Unused (using MagicMock)
 from agent_v2.fixer.blueprint_sanitizer import BlueprintSanitizer
 from agent_v2.analyzer.quality_analyzer import COLOR_SPAWN_RED
 
