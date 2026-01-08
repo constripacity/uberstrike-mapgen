@@ -105,6 +105,7 @@ def build(stack: str, out_dir: str, theme: Optional[str], ubervocab: Optional[st
         sys.exit(1)
 
     # 2. Analyze & Fix
+    modified = False
     if analyze:
         click.secho("\n🔍 Running Blueprint Analysis...", fg="cyan")
         analyzer = MapQualityAnalyzer()
@@ -144,18 +145,16 @@ def build(stack: str, out_dir: str, theme: Optional[str], ubervocab: Optional[st
     # 3. Build Logic (with potentially updated stack)
     from agent_v2.builder.headless_pipeline import HeadlessPipeline
     
-    sanitized_path = None
-    if analyze and auto_fix:
-        # We might have modified it. Save to a temp folder to be sure.
-        # If user specified write_fixed_to, use it. Else temp.
+    # Only save sanitized blueprint if we actually modified it
+    if modified:
         if write_fixed_to:
              target_dir = Path(write_fixed_to)
         else:
              target_dir = Path(out_dir) / "_temp_build_staging"
              
         saved_path = blueprint.save(target_dir, "sanitized", relative_paths=True)
-        sanitized_path = str(saved_path)
-        stack_path_to_use = sanitized_path
+        stack_path_to_use = str(saved_path)
+        click.echo(f"  Using sanitized blueprint: {stack_path_to_use}")
     else:
         stack_path_to_use = str(stack_path)
 

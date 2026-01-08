@@ -168,6 +168,11 @@ class HeadlessPipeline:
         # Create output directory if it doesn't exist
         if not os.path.exists(fs_out_dir):
             os.makedirs(fs_out_dir, exist_ok=True)
+            
+        # Write trace to build artifacts directory, not repo root
+        trace_path = os.path.join(fs_out_dir, "trace.log")
+        with open(trace_path, "a") as t: 
+            t.write(f"Pre-Execute: {unity_exe}\nScript: {script}\nCmd: {cmd}\nLog: {log_file}\n")
 
         print(f"[Agent] Executing: {' '.join(cmd)}")
         if unity_exe: print(f"[Agent] Unity: {unity_exe}")
