@@ -388,17 +388,102 @@ def predict(stack: str, model: str) -> None:
          sys.exit(1)
 
 
-@cli.command()
-@click.option("--bundle", "bundle_path", help="Path to bundle file")
-@click.option("--report", "report_path", help="Path to build_report.json")
-@click.option("--target-dir", required=True, help="Game Data Directory to deploy to")
-def deploy(bundle_path: Optional[str], report_path: Optional[str], target_dir: str) -> None:
-    """Deploy generated map to game."""
+def find_repo_root(start: Path | None = None) -> Path:
+    """Find repository root by looking for .git or MapGen_Project"""
+    cur = (start or Path.cwd()).resolve()
+    for _ in range(12):
+        if (cur / ".git").exists() or (cur / "MapGen_Project").exists():
+            return cur
+        if cur.parent == cur:
+            break
+        cur = cur.parent
+    return (start or Path.cwd()).resolve()
+
+
+def _backup_if_exists(dst: Path) -> None:
+    """Create timestamped backup of existing file"""
+    if dst.exists():
+        stamp = time.strftime("%Y%m%d_%H%M%S")
+        backup = dst.with_suffix(dst.suffix + f".bak_{stamp}")
+        shutil.copy2(dst, backup)
+        click.echo(f"  Backed up: {backup.name}")
+
+
+def _resolve_bundle_from_report(report_path: Path) -> tuple[Path | None, str]:
+    """Resolve bundle path from build report.
     
+    Returns: (bundle_path, resolution_method)
+    """
+    data = json.loads(report_path.read_text(encoding="utf-8"))
+    
+    # Prefer absolute path (bundleDiskPath)
+    disk = data.get("bundleDiskPath")
+    if disk:
+        p = Path(disk)
+        if p.exists():
+            return p, "bundleDiskPath"
+    
+    # Fallback: Unity-relative path (bundlePath like Assets/...)
+    rel = data.get("bundlePath")
+    if rel:
+        # Resolve relative to MapGen_Project root
+        repo_root = find_repo_root(report_path.parent)
+        p = (repo_root / "MapGen_Project" / rel).resolve()
+        if p.exists():
+            return p, "bundlePath+repo_root"
+    
+    return None, "not_found"
+
+
+@cli.command()
+@click.option("--bundle", "bundle_path", default=None, help="Path to bundle file (overrides report)")
+@click.option("--report", "report_path", default=None, help="Path to build_report.json")
+@click.option("--target-dir", required=True, help="Game data directory to deploy to")
+@click.option("--backup/--no-backup", default=True, help="Backup existing files before overwrite")
+def deploy(bundle_path: str | None, report_path: str | None, target_dir: str, backup: bool) -> None:
+    """Deploy generated AssetBundle to game data directory."""
     tgt = Path(target_dir).resolve()
-    if not tgt.exists():
-        click.secho(f"Creating target directory: {tgt}", fg="yellow")
-        tgt.mkdir(parents=True, exist_ok=True)
+    tgt.mkdir(parents=True, exist_ok=True)
+
+    src_bundle: Path | None = None
+    reason = ""
+
+    if bundle_path:
+        p = Path(bundle_path).resolve()
+        if not p.exists():
+            raise click.ClickException(f"--bundle not found: {p}")
+        src_bundle, reason = p, "--bundle"
+    elif report_path:
+        rp = Path(report_path).resolve()
+        if not rp.exists():
+            raise click.ClickException(f"--report not found: {rp}")
+        src_bundle, reason = _resolve_bundle_from_report(rp)
+        if not src_bundle:
+            raise click.ClickException(f"Could not resolve bundle from report ({reason}). Provide --bundle.")
+    else:
+        raise click.ClickException("Provide either --bundle or --report.")
+
+    # Manifest is optional
+    src_manifest = src_bundle.parent / (src_bundle.name + ".manifest")
+    dst_bundle = tgt / src_bundle.name
+    dst_manifest = tgt / src_manifest.name
+
+    click.echo(f"Deploy source: {src_bundle} ({reason})")
+    click.echo(f"Deploy target: {tgt}")
+
+    if backup:
+        _backup_if_exists(dst_bundle)
+        if src_manifest.exists():
+            _backup_if_exists(dst_manifest)
+
+    shutil.copy2(src_bundle, dst_bundle)
+    if src_manifest.exists():
+        shutil.copy2(src_manifest, dst_manifest)
+
+    click.secho("✓ Deploy complete", fg="green")
+    click.echo(f"  Bundle:    {dst_bundle}")
+    if src_manifest.exists():
+        click.echo(f"  Manifest:  {dst_manifest}")
         
     src_bundle = None
     src_manifest = None
