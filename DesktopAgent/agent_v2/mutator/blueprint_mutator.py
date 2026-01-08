@@ -7,14 +7,13 @@ provide gameplay variety.
 
 from __future__ import annotations
 
-import logging
-from pathlib import Path
-from typing import List, TYPE_CHECKING
+from typing import List
 
 import numpy as np
 
-if TYPE_CHECKING:
-    from agent_v2.blueprints.stack_io import BlueprintStack
+from agent_v2.blueprints.stack_io import BlueprintStack
+from pathlib import Path
+
 
 logger = logging.getLogger(__name__)
 
