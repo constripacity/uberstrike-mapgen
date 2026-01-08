@@ -7,6 +7,7 @@ provide gameplay variety.
 
 from __future__ import annotations
 
+import logging
 from typing import List
 
 import numpy as np
