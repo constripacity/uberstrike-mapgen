@@ -7,12 +7,15 @@ blueprints (images) to meet strict QC requirements before they reach Unity.
 from __future__ import annotations
 
 import logging
-from typing import List, Tuple
+from typing import List, Tuple, TYPE_CHECKING
 
 import numpy as np
 from scipy.spatial.distance import cdist
 
-from agent_v2.blueprints.stack_io import BlueprintStack, LAYER_KEYS
+from agent_v2.blueprints.stack_io import LAYER_KEYS
+
+if TYPE_CHECKING:
+    from agent_v2.blueprints.stack_io import BlueprintStack
 from agent_v2.analyzer.quality_analyzer import COLOR_SPAWN_RED, COLOR_SPAWN_GREEN, COLOR_SPAWN_YELLOW, COLOR_TOLERANCE, color_match
 
 logger = logging.getLogger(__name__)

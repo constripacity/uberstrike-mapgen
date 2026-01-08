@@ -9,11 +9,12 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import List
+from typing import List, TYPE_CHECKING
 
 import numpy as np
 
-from agent_v2.blueprints.stack_io import BlueprintStack
+if TYPE_CHECKING:
+    from agent_v2.blueprints.stack_io import BlueprintStack
 
 logger = logging.getLogger(__name__)
 

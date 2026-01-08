@@ -7,13 +7,14 @@ useful for ML training baselines.
 from __future__ import annotations
 
 import logging
-from typing import Dict, Tuple
+from typing import Dict, Tuple, TYPE_CHECKING
 
 import networkx as nx
 import numpy as np
 from scipy.ndimage import distance_transform_edt, binary_dilation
 
-from agent_v2.blueprints.stack_io import BlueprintStack
+if TYPE_CHECKING:
+    from agent_v2.blueprints.stack_io import BlueprintStack
 from agent_v2.analyzer.quality_analyzer import color_match, COLOR_SPAWN_RED, COLOR_SPAWN_GREEN, COLOR_SPAWN_YELLOW
 
 logger = logging.getLogger(__name__)

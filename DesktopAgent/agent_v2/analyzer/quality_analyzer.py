@@ -6,7 +6,7 @@ import collections
 import json
 from dataclasses import dataclass, asdict
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, TYPE_CHECKING, Union
 
 import networkx as nx
 import numpy as np
@@ -14,7 +14,8 @@ from PIL import Image
 from scipy.ndimage import distance_transform_edt
 import yaml
 
-from agent_v2.blueprints.stack_io import BlueprintStack
+if TYPE_CHECKING:
+    from agent_v2.blueprints.stack_io import BlueprintStack
 
 # Unity Color definitions (approximate)
 COLOR_SPAWN_RED = (255, 0, 0)
