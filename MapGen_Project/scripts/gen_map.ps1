@@ -4,12 +4,16 @@ param(
     [string]$themeAsset,
     [string]$ubervocab,
     [string]$seed,
+    [string]$buildBundle,
+    [string]$bundleTarget,
+    [string]$bundleOutDir,
     [switch]$verbose
 )
 
 $UnityPath = $env:UNITY_EXE
 if (-not $UnityPath) {
-    $UnityPath = "C:\Program Files\Unity\Hub\Editor\6000.0.24f1\Editor\Unity.exe"
+    # Default fallback
+    $UnityPath = "C:\Program Files\Unity\Hub\Editor\6000.0.56f1\Editor\Unity.exe"
 }
 
 $ProjectPath = Resolve-Path "$PSScriptRoot\.."
@@ -17,6 +21,14 @@ $ProjectPath = Resolve-Path "$PSScriptRoot\.."
 if (-not (Test-Path $UnityPath)) {
     Write-Error "Unity executable not found at $UnityPath"
     exit 1
+}
+
+# Resolve Log Path
+$LogPath = Join-Path $outDir "unity_editor.log"
+# Ensure directory exists for log
+$LogDir = Split-Path $LogPath -Parent
+if (-not (Test-Path $LogDir)) {
+    New-Item -ItemType Directory -Path $LogDir -Force | Out-Null
 }
 
 $ArgsList = @(
@@ -33,6 +45,9 @@ if ($outDir) { $ArgsList += "-outDir"; $ArgsList += """$outDir""" }
 if ($themeAsset) { $ArgsList += "-themeAsset"; $ArgsList += """$themeAsset""" }
 if ($ubervocab) { $ArgsList += "-ubervocab"; $ArgsList += """$ubervocab""" }
 if ($seed) { $ArgsList += "-seed"; $ArgsList += """$seed""" }
+if ($buildBundle) { $ArgsList += "-buildBundle"; $ArgsList += """$buildBundle""" }
+if ($bundleTarget) { $ArgsList += "-bundleTarget"; $ArgsList += """$bundleTarget""" }
+if ($bundleOutDir) { $ArgsList += "-bundleOutDir"; $ArgsList += """$bundleOutDir""" }
 
 Write-Host "[GenMap] Starting Unity..." -ForegroundColor Cyan
 if ($verbose) { Write-Host "Command: & $UnityPath $ArgsList" }

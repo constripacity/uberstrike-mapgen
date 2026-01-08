@@ -4,13 +4,14 @@ using UnityEditor.SceneManagement;
 using System;
 using System.IO;
 using System.Collections.Generic;
-using UnityEditor.Build.Pipeline;
 using MapGen.Core;
 
 namespace MapGen.Editor.CLI
 {
     public static class HeadlessBuilder
     {
+        // Pre-registered scene path to avoid AssetDatabase GUID timing issues in BatchMode
+        private const string BakeScenePath = "Assets/MapGen/Generated/RuntimeBakeScene.unity";
         [Serializable]
         public struct BuildReport
         {
@@ -37,7 +38,8 @@ namespace MapGen.Editor.CLI
             public string bundleTarget;
             public string bundleDir;
             public string bundleName;
-            public string bundlePath;
+            public string bundlePath;      // Unity-relative path
+            public string bundleDiskPath;  // Absolute filesystem path
         }
 
         public static void Build()
@@ -99,6 +101,8 @@ namespace MapGen.Editor.CLI
                 report.loadMs = watch.Elapsed.TotalMilliseconds;
                 watch.Restart();
 
+                // Create scene FIRST to avoid unloading textures later
+                var newScene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
                 def.Layers = new StackDefinition.StackLayerBundle();
                 def.Layers.layout = LoadTexture(def, def.layoutPath, true); 
                 def.Layers.flow = LoadTexture(def, def.flowPath, true);
@@ -125,8 +129,9 @@ namespace MapGen.Editor.CLI
                 }
                 
                 // 4. Build
-                var newScene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+                // var newScene moved up
                 var builder = new GreyboxBuilder();
+                Console.WriteLine($"[HeadlessBuilder] Pre-Generate Check: Layout={def.Layers.layout != null} (Width={def.Layers.layout?.width})");
                 var root = builder.Generate(def, theme);
                 
                 report.buildMs = watch.Elapsed.TotalMilliseconds;
@@ -160,48 +165,21 @@ namespace MapGen.Editor.CLI
                     else report.status = "pass";
 
                     // 6. Save Scene Logic
-                    // Determine where to save the .unity file.
-                    // If outDir is inside project (Assets/...), save there.
-                    // If outDir is absolute external, save to Assets/_Generated/Maps fallback, and export report to external.
+                    // Use pre-registered scene path to avoid AssetDatabase GUID timing issues
+                    string finalScenePath = BakeScenePath;
                     
-                    string absOutDir = Path.GetFullPath(outDir);
-                    string projectRoot = Path.GetFullPath(Application.dataPath).Replace("/Assets", "").Replace("\\", "/");
-                    // Normalize absOutDir separators
-                    absOutDir = absOutDir.Replace("\\", "/");
-
-                    bool isInsideProject = absOutDir.StartsWith(projectRoot);
-                    string finalScenePath;
-
-                    if (isInsideProject)
-                    {
-                         // Calculate relative path
-                         // e.g. C:/Proj/Assets/Out -> Assets/Out
-                         string relPath = "Assets" + absOutDir.Substring(projectRoot.Length + "/Assets".Length); // or safer logic
-                         // Better: substring from projectRoot length + 1
-                         if (absOutDir.Length > projectRoot.Length) {
-                            relPath = absOutDir.Substring(projectRoot.Length + 1);
-                         } else {
-                            relPath = "Assets";
-                         }
-                         
-                         if (!Directory.Exists(relPath)) Directory.CreateDirectory(relPath);
-                         finalScenePath = $"{relPath}/Map_{def.sourceName}.unity";
-                    }
-                    else
-                    {
-                        // External path -> Save to default internal path
-                        string internalDir = "Assets/_Generated/Maps";
-                        if (!Directory.Exists(internalDir)) Directory.CreateDirectory(internalDir);
-                        finalScenePath = $"{internalDir}/Map_{def.sourceName}.unity";
-                        Warn(ref report, $"Output directory is external. Scene saved internally at {finalScenePath}");
-                    }
+                    // Ensure directory exists
+                    string sceneDir = Path.GetDirectoryName(finalScenePath);
+                    if (!Directory.Exists(sceneDir)) Directory.CreateDirectory(sceneDir);
                     
                     EditorSceneManager.SaveScene(newScene, finalScenePath);
+                    AssetDatabase.SaveAssets();
                     report.scenePath = finalScenePath;
                     report.saveMs = watch.Elapsed.TotalMilliseconds;
 
                     // 6b. Build Bundle Logic
-                    string buildBundleStr = Arg("-buildBundle") ?? Arg("--buildBundle");
+                    // Accept both -buildBundle/--buildBundle and -bundle/--bundle as aliases
+                    string buildBundleStr = Arg("-buildBundle") ?? Arg("--buildBundle") ?? Arg("-bundle") ?? Arg("--bundle");
                     bool buildBundle = !string.IsNullOrEmpty(buildBundleStr) && buildBundleStr != "0" && buildBundleStr.ToLower() != "false";
 
                     if (buildBundle)
@@ -216,7 +194,7 @@ namespace MapGen.Editor.CLI
                         
                         string bundleOutDir = Arg("-bundleOutDir") ?? Arg("--bundleOutDir");
                         
-                        // Default logic
+                        // Default logic - use Unity-relative paths for AssetDatabase
                         string unityBundleDir;
                         if (string.IsNullOrEmpty(bundleOutDir))
                         {
@@ -244,55 +222,81 @@ namespace MapGen.Editor.CLI
                             }
                         }
                         
-                        // Create Dirs
-                        if (!Directory.Exists(unityBundleDir)) Directory.CreateDirectory(unityBundleDir);
+                        // Create Dirs - use absolute path for filesystem operations
+                        string absBundleDir = Path.GetFullPath(unityBundleDir);
+                        if (!Directory.Exists(absBundleDir)) Directory.CreateDirectory(absBundleDir);
                         
                         string bundleName = $"map_{def.sourceName.ToLowerInvariant()}";
                         report.bundleName = bundleName;
                         report.bundleDir = unityBundleDir;
                         
-                        // AssetBundleBuild
+                        // AssetBundleBuild - verify GUID exists (should always exist for pre-registered scene)
                         string sceneRelPath = finalScenePath.Replace("\\", "/"); 
-                        // Ensure it starts with Assets
-                        if (!sceneRelPath.StartsWith("Assets")) sceneRelPath = "Assets/" + sceneRelPath; // Robustness
                         
-                        AssetBundleBuild[] buildMap = new AssetBundleBuild[1];
-                        buildMap[0].assetBundleName = bundleName;
-                        buildMap[0].assetNames = new string[] { sceneRelPath };
+                        var guid = UnityEditor.AssetDatabase.AssetPathToGUID(sceneRelPath);
+                        Console.WriteLine($"[HeadlessBuilder] Building bundle for: {sceneRelPath} (GUID: {guid})");
                         
-                        var manifest = BuildPipeline.BuildAssetBundles(unityBundleDir, buildMap, BuildAssetBundleOptions.ChunkBasedCompression, target);
-                        
-                        if (manifest != null)
-                        {
-                            // Success
-                            string diskPath = Path.Combine(unityBundleDir, bundleName);
-                            report.bundlePath = diskPath;
-                            Console.WriteLine($"[HeadlessBuilder] Bundle built: {diskPath}");
+                        if (string.IsNullOrEmpty(guid)) {
+                            Error(ref report, $"BakeScenePath has no GUID. Ensure {BakeScenePath} is committed with .meta file.");
                         }
                         else
                         {
-                             Error(ref report, "BuildPipeline.BuildAssetBundles returned null.");
+                            UnityEditor.AssetBundleBuild[] buildMap = new UnityEditor.AssetBundleBuild[1];
+                            buildMap[0].assetBundleName = bundleName;
+                            buildMap[0].assetNames = new string[] { sceneRelPath };
+                            
+                            var manifest = UnityEditor.BuildPipeline.BuildAssetBundles(
+                                unityBundleDir, 
+                                buildMap, 
+                                UnityEditor.BuildAssetBundleOptions.ForceRebuildAssetBundle | UnityEditor.BuildAssetBundleOptions.ChunkBasedCompression, 
+                                target
+                            );
+                            
+                            if (manifest != null)
+                            {
+                                // Success - store both Unity path and absolute disk path
+                                report.bundlePath = $"{unityBundleDir}/{bundleName}".Replace("\\", "/");
+                                report.bundleDiskPath = Path.GetFullPath(report.bundlePath);
+                                Console.WriteLine($"[HeadlessBuilder] Bundle built: {report.bundlePath}");
+                                Console.WriteLine($"[HeadlessBuilder] Bundle disk path: {report.bundleDiskPath}");
+                            }
+                            else
+                            {
+                                Error(ref report, "BuildPipeline.BuildAssetBundles returned null.");
+                            }
                         }
+                        
+                        // Recompute status after bundle build (bundle errors should fail the build)
+                        if (report.errors.Count > 0) report.status = "fail";
+                        else if (report.warnings.Count > 0) report.status = "warn";
+                        else report.status = "pass";
+
                     }
-                    
-            // 7. Write Report (To requested outDir)
-                    if (!Directory.Exists(absOutDir)) Directory.CreateDirectory(absOutDir);
-                    string rPath = Path.Combine(absOutDir, "build_report.json");
-                    File.WriteAllText(rPath, JsonUtility.ToJson(report, true));
-                    
-                    Console.WriteLine($"[HeadlessBuilder] Report saved to {rPath}");
                 }
                 else
                 {
                     Error(ref report, "Greybox generation returned null root.");
                 }
-
             }
             catch (Exception ex)
             {
                 Error(ref report, $"Exception: {ex.Message}\n{ex.StackTrace}");
             }
-            
+
+            // 7. Write Report (To requested outDir)
+            try
+            {
+                string rOutDir = Path.GetFullPath(report.outDir);
+                if (!Directory.Exists(rOutDir)) Directory.CreateDirectory(rOutDir);
+                string rPath = Path.Combine(rOutDir, "build_report.json");
+                File.WriteAllText(rPath, JsonUtility.ToJson(report, true));
+                Console.WriteLine($"[HeadlessBuilder] Report saved to {rPath}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Error] Failed to save report: {ex.Message}");
+            }
+
             int code = 0;
             if (report.status == "fail") code = 1;
             else if (report.status == "warn") code = 2;
@@ -301,10 +305,10 @@ namespace MapGen.Editor.CLI
             Exit(code);
         }
 
-        private static BuildTarget ParseBuildTarget(string s)
+        private static UnityEditor.BuildTarget ParseBuildTarget(string s)
         {
-            try { return (BuildTarget)Enum.Parse(typeof(BuildTarget), s, true); }
-            catch { return BuildTarget.StandaloneWindows64; }
+            try { return (UnityEditor.BuildTarget)Enum.Parse(typeof(UnityEditor.BuildTarget), s, true); }
+            catch { return UnityEditor.BuildTarget.StandaloneWindows64; }
         }
 
         private static string Arg(string name)
@@ -330,9 +334,15 @@ namespace MapGen.Editor.CLI
 
         private static Texture2D LoadTexture(StackDefinition def, string relPath, bool sRGB)
         {
-            if (string.IsNullOrEmpty(relPath)) return null;
+            if (string.IsNullOrEmpty(relPath)) {
+                Console.WriteLine($"[HeadlessBuilder] Skipping texture (path empty)");
+                return null;
+            }
             string absPath = Path.Combine(def.directory, relPath);
-            if (!File.Exists(absPath)) return null;
+            bool exists = File.Exists(absPath);
+            Console.WriteLine($"[HeadlessBuilder] LoadTexture: '{relPath}' -> '{absPath}' (Exists: {exists})");
+            
+            if (!exists) return null;
 
             string fullPath = Path.GetFullPath(absPath).Replace("\\", "/");
             string dataPath = Application.dataPath.Replace("\\", "/");
@@ -357,6 +367,10 @@ namespace MapGen.Editor.CLI
                         Console.WriteLine($"[HeadlessBuilder] Fixed settings for {localPath}");
                     }
                  }
+            }
+            else
+            {
+                Console.WriteLine($"[HeadlessBuilder] Texture outside Assets; importer settings not applied: {fullPath}");
             }
 
             byte[] bytes = File.ReadAllBytes(absPath);
