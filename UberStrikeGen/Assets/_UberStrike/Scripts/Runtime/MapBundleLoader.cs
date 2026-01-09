@@ -190,11 +190,32 @@ public class MapBundleLoader : MonoBehaviour
             while (!op.isDone)
                 await System.Threading.Tasks.Task.Yield();
 
+            // Ensure a camera exists in the loaded scene
+            EnsureCameraExists();
+
             _status = $"Loaded scene: {sceneName}";
         }
         catch (Exception ex)
         {
             _status = $"ERROR loading scene: {ex.Message}";
+        }
+    }
+
+    private void EnsureCameraExists()
+    {
+        var cam = Camera.main;
+        if (cam == null)
+        {
+            cam = FindObjectOfType<Camera>();
+        }
+
+        if (cam == null)
+        {
+            var go = new GameObject("FallbackCamera");
+            cam = go.AddComponent<Camera>();
+            cam.transform.position = new Vector3(0, 5, -10);
+            cam.transform.LookAt(Vector3.zero);
+            Debug.Log("[MapBundleLoader] Created fallback camera (scene had none).");
         }
     }
 
