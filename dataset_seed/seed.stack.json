@@ -1,4 +1,9 @@
 {
+  "layoutPath": "seed.layout.png",
+  "flowPath": "seed.flow.png",
+  "heightPath": "seed.height.png",
+  "lightingPath": "seed.lighting.png",
+  "collisionPath": "seed.collision.png",
   "metersPerPixel": 1.0,
   "wallHeight": 4.0,
   "heightScale": 0.05,

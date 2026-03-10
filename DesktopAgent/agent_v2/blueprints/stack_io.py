@@ -40,16 +40,28 @@ class BlueprintStack:
         stack_dir = stack_path.parent
         layers = {}
 
+        stack_stem = stack_path.stem.replace(".stack", "")
+
         for key in LAYER_KEYS:
             path_key = f"{key}Path"
+            img_path: Optional[Path] = None
+
             if path_key in meta:
                 img_path = stack_dir / str(meta[path_key])
-                if img_path.exists():
-                    # Load as RGBA to match Unity behavior
-                    img = Image.open(img_path).convert("RGBA")
-                    layers[key] = np.array(img)
-                else:
-                    print(f"Warning: Layer {key} referenced but missing at {img_path}")
+            else:
+                # Implicit fallback: try <stem>.<layer>.png then <layer>.png
+                for candidate_name in [f"{stack_stem}.{key}.png", f"{key}.png"]:
+                    candidate = stack_dir / candidate_name
+                    if candidate.exists():
+                        img_path = candidate
+                        break
+
+            if img_path is not None and img_path.exists():
+                # Load as RGBA to match Unity behavior
+                img = Image.open(img_path).convert("RGBA")
+                layers[key] = np.array(img)
+            elif img_path is not None:
+                print(f"Warning: Layer {key} referenced but missing at {img_path}")
 
         return cls(stack_path=stack_path, meta=meta, layers=layers)
 

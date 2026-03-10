@@ -12,8 +12,16 @@ param(
 
 $UnityPath = $env:UNITY_EXE
 if (-not $UnityPath) {
-    # Default fallback
-    $UnityPath = "C:\Program Files\Unity\Hub\Editor\6000.0.56f1\Editor\Unity.exe"
+    # Try Unity 2022 first (UberStrike 4.3 mapgen), then Unity 6
+    $Candidates = @(
+        "C:\Program Files\Unity\Hub\Editor\2022.3.40f1\Editor\Unity.exe",
+        "C:\Program Files\Unity\Hub\Editor\6000.2.6f2\Editor\Unity.exe",
+        "C:\Program Files\Unity\Hub\Editor\6000.0.56f1\Editor\Unity.exe"
+    )
+    $UnityPath = $Candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+    if (-not $UnityPath) {
+        $UnityPath = $Candidates[0]  # Will fail with clear error message
+    }
 }
 
 $ProjectPath = Resolve-Path "$PSScriptRoot\.."

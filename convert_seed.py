@@ -51,9 +51,18 @@ for f in FILES:
         
     print(f"Decoded {f} -> {target_name}")
 
-# We also need to update the json if it has hardcoded paths?
-# The source json didn't have paths.
-# But StackIO.load() tries to find implicitly.
-# If we name them seed.layout.png and verify seed.stack.json loads, we are good.
+# Inject layer path fields into the stack JSON so BlueprintStack.load() finds them
+stack_json_path = OUT_DIR / "seed.stack.json"
+with open(stack_json_path, "r") as f:
+    stack_data = json.load(f)
 
-print(f"Seed ready at {OUT_DIR / 'seed.stack.json'}")
+layer_types = ["layout", "flow", "height", "theme", "lighting", "collision"]
+for lt in layer_types:
+    img_name = f"seed.{lt}.png"
+    if (OUT_DIR / img_name).exists():
+        stack_data[f"{lt}Path"] = img_name
+
+with open(stack_json_path, "w") as f:
+    json.dump(stack_data, f, indent=2)
+
+print(f"Seed ready at {stack_json_path}")

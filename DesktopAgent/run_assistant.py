@@ -10,6 +10,7 @@ import shutil
 import sys
 import os
 import platform
+import time
 from pathlib import Path
 from typing import Optional
 
@@ -484,73 +485,6 @@ def deploy(bundle_path: str | None, report_path: str | None, target_dir: str, ba
     click.echo(f"  Bundle:    {dst_bundle}")
     if src_manifest.exists():
         click.echo(f"  Manifest:  {dst_manifest}")
-        
-    src_bundle = None
-    src_manifest = None
-    
-    # Resolve Source
-    if report_path:
-        rp = Path(report_path).resolve()
-        if not rp.exists():
-            click.secho(f"Report not found: {rp}", fg="red")
-            sys.exit(1)
-            
-        with open(rp, "r") as f:
-            data = json.load(f)
-            
-        if "bundlePath" not in data:
-            click.secho("Report does not contain bundle info.", fg="red")
-            sys.exit(1)
-            
-        # Unity path usually relative or absolute. 
-        # Best to rely on relative path from project root if absolute fails?
-        # Actually pipeline returns 'bundlePath' which is constructed as Path.Combine(unityBundleDir, bundleName)
-        # But unityBundleDir was "Assets/..."
-        # So we need to find the project root + that path.
-        
-        # Simpler: If bundlePath exists as absolute, use it.
-        # If not, try relative to report location? No, report is in outDir.
-        # Bundle is in project. 
-        # Actually HeadlessBuilder prints absolute path if possible or relative.
-        # Let's try to interpret it.
-        
-        candidate = Path(data["bundlePath"])
-        if candidate.exists():
-            src_bundle = candidate
-        else:
-             # Try relative to project? We don't know project loc easily here.
-             # User should use --bundle if report path is obscure.
-             click.secho(f"Could not resolve bundle path from report: {data['bundlePath']}", fg="yellow")
-             click.echo("Trying manual resolution...")
-             # Maybe report has resolved_out_dir?
-             pass
-
-    if bundle_path and not src_bundle:
-        bp = Path(bundle_path).resolve()
-        if bp.exists():
-            src_bundle = bp
-            
-    if not src_bundle:
-        click.secho("Error: Could not locate bundle file. Provide --bundle or valid --report.", fg="red")
-        sys.exit(1)
-        
-    # Manifest
-    candidate_manifest = src_bundle.parent / (src_bundle.name + ".manifest")
-    if candidate_manifest.exists():
-        src_manifest = candidate_manifest
-        
-    # Deploy
-    click.echo(f"Deploying {src_bundle.name} -> {tgt}")
-    
-    try:
-        shutil.copy2(src_bundle, tgt / src_bundle.name)
-        if src_manifest:
-            shutil.copy2(src_manifest, tgt / src_manifest.name)
-            
-        click.secho("✓ Success", fg="green")
-    except Exception as e:
-        click.secho(f"Deploy failed: {e}", fg="red")
-        sys.exit(1)
 
 
 @cli.command()

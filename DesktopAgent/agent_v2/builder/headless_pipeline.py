@@ -63,17 +63,33 @@ class HeadlessPipeline:
         system = platform.system()
         candidates = []
         if system == "Windows":
-            candidates = [
-                r"C:\Program Files\Unity\Hub\Editor\6000.0.24f1\Editor\Unity.exe",
-                r"C:\Program Files\Unity\Hub\Editor\2022.3.0f1\Editor\Unity.exe"
-            ]
+            # Auto-detect installed Unity versions
+            hub_dir = Path(r"C:\Program Files\Unity\Hub\Editor")
+            if hub_dir.exists():
+                installed = sorted(
+                    [d for d in hub_dir.iterdir() if d.is_dir() and (d / "Editor" / "Unity.exe").exists()],
+                    key=lambda d: d.name,
+                    reverse=True,
+                )
+                candidates = [str(d / "Editor" / "Unity.exe") for d in installed]
+            else:
+                candidates = [
+                    r"C:\Program Files\Unity\Hub\Editor\6000.2.6f2\Editor\Unity.exe",
+                    r"C:\Program Files\Unity\Hub\Editor\6000.0.56f1\Editor\Unity.exe",
+                    r"C:\Program Files\Unity\Hub\Editor\2022.3.40f1\Editor\Unity.exe",
+                    r"C:\Program Files\Unity\Hub\Editor\2022.3.22f1\Editor\Unity.exe",
+                ]
         elif system == "Darwin": # Mac
             candidates = [
-                 "/Applications/Unity/Hub/Editor/6000.0.24f1/Unity.app/Contents/MacOS/Unity",
+                "/Applications/Unity/Hub/Editor/6000.2.6f2/Unity.app/Contents/MacOS/Unity",
+                "/Applications/Unity/Hub/Editor/6000.0.56f1/Unity.app/Contents/MacOS/Unity",
+                "/Applications/Unity/Hub/Editor/2022.3.40f1/Unity.app/Contents/MacOS/Unity",
             ]
         elif system == "Linux":
             candidates = [
-                str(Path.home() / "Unity/Hub/Editor/6000.0.24f1/Editor/Unity")
+                str(Path.home() / "Unity/Hub/Editor/6000.2.6f2/Editor/Unity"),
+                str(Path.home() / "Unity/Hub/Editor/6000.0.56f1/Editor/Unity"),
+                str(Path.home() / "Unity/Hub/Editor/2022.3.40f1/Editor/Unity"),
             ]
             
         for c in candidates:
