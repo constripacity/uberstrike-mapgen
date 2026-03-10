@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Initialize Anthropic client
-client = anthropic.Anthropic(api_key=os.environ.get("YOUR_API_KEY_HERE"))
+client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 
 def read_question(filename):
     """Read question from file"""

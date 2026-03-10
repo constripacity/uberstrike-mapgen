@@ -27,6 +27,48 @@ This repository contributes to that community revival effort by providing a **mo
 
 ---
 
+## ⚛️ Quantum-Assisted Map Optimization
+
+This repository includes an experimental quantum computing module that explores using **quantum annealing** to optimize item placement in procedurally generated maps.
+
+### The Problem
+
+Placing 25 gameplay items (weapons, health, armor, ammo) on a generated map requires satisfying multiple competing constraints simultaneously — spawn balance, minimum spacing, risk/reward exposure, flow alignment, and strategic depth. Our classical Simulated Annealing optimizer gets trapped in local minima where these constraints conflict.
+
+### The Approach
+
+We formulated the item placement problem as a **QUBO** (Quadratic Unconstrained Binary Optimization) — the native input format for quantum annealers — and tested it using QAOA circuits on Amazon Braket simulators.
+
+### Results
+
+| Scale | Qubits | Runtime | Best Energy |
+|:------|:------:|:-------:|:-----------:|
+| Local (4-8 candidates) | 12-24 | 7s - 6 min | 2,447 |
+| Cloud SV1 (11 candidates) | 33 | ~44 min | 1,339 |
+| D-Wave target (50+ candidates) | 150-750+ | Seconds (projected) | TBD |
+
+The exponential runtime wall of classical simulation (each +3 qubits = 3-7x slower) motivates testing on D-Wave's 5,000+ qubit quantum annealer, where our 1,250-3,750 variable QUBO fits naturally.
+
+### Quantum Module Structure
+```
+qubo_encoder.py                    # Constraint → QUBO matrix conversion
+quantum_mapgen/
+├── braket_runner.py               # QAOA circuit builder (local + SV1 cloud)
+├── exp1_basic_connectivity.py     # Experiment 1: 3 power items proof-of-concept
+├── exp1_scaling_quick.py          # Scaling study across qubit counts
+├── visualize_results.py           # Result charts
+```
+
+### Setup
+```bash
+pip install amazon-braket-sdk amazon-braket-default-simulator
+export BRAKET_S3_BUCKET=your-braket-bucket-name
+python -m quantum_mapgen.exp1_basic_connectivity          # local simulator
+python -m quantum_mapgen.exp1_basic_connectivity --cloud   # SV1 (uses free tier)
+```
+
+---
+
 ## ⚡ Quick Start
 
 ```bash

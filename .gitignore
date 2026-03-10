@@ -11,6 +11,7 @@
 # *.unity # Don't ignore all scenes
 **/Assets/_Generated/Bundles/
 **/Assets/_Generated/Maps/
+**/Assets/_Generated/RuntimeTest/
 Assets/_Generated/
 MapGen_Project/Assets/_Generated/**/*.unity
 UberUnity/
@@ -40,9 +41,16 @@ Output/**/*.dll
 .vscode/
 .idea/
 
+# Auto-generated Unity project files (contain machine-specific paths)
+MapGen_Project/*.csproj
+MapGen_Project/*.sln
+
 # OS
 Thumbs.db
 .DS_Store
+
+# Claude Code local settings
+.claude/
 
 /Assets/_Generated/Maps/
 
@@ -55,3 +63,16 @@ models/
 debug_*.py
 debug_*.txt
 Output/
+
+# Credentials & secrets
+.aws/
+*_accessKeys.csv
+*.csv.bak
+
+# Quantum MapGen — local-only data (contain task ARNs / account IDs)
+quantum_mapgen/sv1_usage_log.json
+quantum_mapgen/sv1_task*_results.json
+quantum_mapgen/exp1_scaling_results.json
+
+# DesktopAgent local config (contains machine-specific paths)
+DesktopAgent/config/local.json
