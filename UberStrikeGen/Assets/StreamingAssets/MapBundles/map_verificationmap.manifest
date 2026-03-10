@@ -1,0 +1,45 @@
+ManifestFileVersion: 0
+UnityVersion: 6000.0.56f1
+CRC: 3856882069
+Hashes:
+  AssetFileHash:
+    serializedVersion: 2
+    Hash: e5c0f0e82b931fbf427ebac367696218
+  TypeTreeHash:
+    serializedVersion: 2
+    Hash: 93763543be02d1d94713ee92f84e78aa
+  IncrementalBuildHash:
+    serializedVersion: 2
+    Hash: a2b4560ecc6e9512f72712f68e5fbdbe
+HashAppended: 0
+ClassTypes:
+- Class: 1
+  Script: {instanceID: 0}
+- Class: 4
+  Script: {instanceID: 0}
+- Class: 21
+  Script: {instanceID: 0}
+- Class: 23
+  Script: {instanceID: 0}
+- Class: 28
+  Script: {instanceID: 0}
+- Class: 33
+  Script: {instanceID: 0}
+- Class: 43
+  Script: {instanceID: 0}
+- Class: 48
+  Script: {instanceID: 0}
+- Class: 65
+  Script: {instanceID: 0}
+- Class: 89
+  Script: {instanceID: 0}
+- Class: 104
+  Script: {instanceID: 0}
+- Class: 157
+  Script: {instanceID: 0}
+- Class: 196
+  Script: {instanceID: 0}
+SerializeReferenceClassIdentifiers: []
+Assets:
+- Assets/MapGen/Generated/RuntimeBakeScene.unity
+Dependencies: []
