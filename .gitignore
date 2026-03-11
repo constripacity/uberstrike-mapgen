@@ -73,6 +73,7 @@ Output/
 quantum_mapgen/sv1_usage_log.json
 quantum_mapgen/sv1_task*_results.json
 quantum_mapgen/exp1_scaling_results.json
+quantum_mapgen/DWAVE_APPLICATION.md
 
 # DesktopAgent local config (contains machine-specific paths)
 DesktopAgent/config/local.json
