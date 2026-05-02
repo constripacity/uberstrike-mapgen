@@ -622,17 +622,24 @@ public class WFCCore
     {
         var constraints = new Dictionary<Vector2Int, WFCTileType>();
 
-        // Border walls
-        for (int x = 0; x < _width; x++)
+        // Border edges and corners. Constraining corners to type Wall is structurally
+        // unsolvable: the plain Wall tile has wall sockets only on N/S (or E/W after
+        // rotation), but a corner cell needs wall sockets on two adjacent edges to
+        // mate with both border runs. Corners must use WallCorner; edges use Wall.
+        for (int x = 1; x < _width - 1; x++)
         {
             constraints[new Vector2Int(x, 0)] = WFCTileType.Wall;
             constraints[new Vector2Int(x, _height - 1)] = WFCTileType.Wall;
         }
-        for (int y = 0; y < _height; y++)
+        for (int y = 1; y < _height - 1; y++)
         {
             constraints[new Vector2Int(0, y)] = WFCTileType.Wall;
             constraints[new Vector2Int(_width - 1, y)] = WFCTileType.Wall;
         }
+        constraints[new Vector2Int(0, 0)] = WFCTileType.WallCorner;
+        constraints[new Vector2Int(_width - 1, 0)] = WFCTileType.WallCorner;
+        constraints[new Vector2Int(0, _height - 1)] = WFCTileType.WallCorner;
+        constraints[new Vector2Int(_width - 1, _height - 1)] = WFCTileType.WallCorner;
 
         // Distribute spawns across quadrants (up to 8 positions)
         var spawnPositions = new[]
