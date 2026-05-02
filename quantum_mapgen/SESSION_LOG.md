@@ -138,22 +138,22 @@ WFC Layout -> Voronoi Themes -> QUBO Encoder -> Quantum Solver -> Decode -> Flow
 
 ---
 
-## D-Wave LaunchPad Application
+## 2026-04-02 — Full Capability Audit
 
-- Apply at: dwavesys.com/quantum-launchpad (3-month free trial)
-- Pitch: Classical SA for game map item placement -> quantum annealing comparison
-- Key selling point: SA's aggressive cooling creates local minima where spawn balance and risk/reward constraints conflict. Quantum annealing tunnels through energy barriers.
-- Target conferences: FDG (Foundations of Digital Games), IEEE CoG, IEEE QCE
+Completed full MapGen capability audit (38,800 LOC, 180 files). Produced `MAPGEN_CAPABILITY_REPORT.md` with 10-section analysis covering every source file in the repo. Created theoretical $10K investment plan mapping development priorities. Decision: execute all coding work via Claude Code sessions instead of hiring developers.
 
----
+**Key quantum-relevant findings:**
+- QUBO encoder (947 lines) and QAOA runner (720 lines) are PRODUCTION status
+- Greedy repair is essential — one-hot penalty=500 still insufficient for direct QAOA feasibility
+- Local ceiling: ~24 qubits. SV1 ceiling: 33 qubits. D-Wave target: 3750+ qubits
+- Next quantum step: submit D-Wave LaunchPad application, then build quantum->Unity adapter
 
 ## Next Steps
 
-1. **Verify SV1 billing** tomorrow at AWS Free Tier dashboard
-2. **Build visualization** (runtime vs qubits, energy vs candidates) — local only
-3. **Draft D-Wave LaunchPad application** with real experimental data
-4. **If budget OK:** One careful single-shot SV1 run with locally-optimized parameters
-5. **Push to GitHub**, apply to D-Wave
+1. **Submit D-Wave LaunchPad application** (draft ready in local-only files)
+2. **Session A:** Port WFC to C# with backtracking (replace WFCCore.cs stub)
+3. **Build quantum->Unity adapter** after D-Wave acceptance
+4. **Full 25-item placement** on D-Wave QPU (3750+ qubits)
 
 ---
 
@@ -175,5 +175,18 @@ uberstrike-mapgen/
 │   ├── sv1_task1_results.json                # SV1 raw results (task 1)
 │   ├── sv1_task2_results.json                # SV1 raw results (task 2)
 │   ├── SESSION_LOG.md                        # This file
-│   ├── visualize_results.py                  # Charts (TODO)
+│   ├── visualize_results.py                  # Result charts
+│   ├── chart_a_runtime_vs_qubits.png         # Chart A
+│   └── chart_b_energy_vs_candidates.png      # Chart B
+```
+
+### Local-only files (gitignored, backed up to Downloads)
+```
+C:\Users\Shadow\Downloads\quantum_mapgen_secrets\
+├── braket-dev_accessKeys.csv                 # AWS IAM access keys
+├── sv1_usage_log.json                        # SV1 budget tracker (has task ARNs + account ID)
+├── sv1_task1_results.json                    # SV1 raw results (has account ID in ARN)
+├── sv1_task2_results.json                    # SV1 raw results (has account ID in ARN)
+├── exp1_scaling_results.json                 # Local scaling data
+└── DWAVE_APPLICATION.md                      # D-Wave LaunchPad application draft
 ```
