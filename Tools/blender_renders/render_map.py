@@ -61,6 +61,121 @@ def send(cmd_type: str, params: dict, timeout: float = 600.0) -> dict:
         s.close()
 
 
+def _build_bake_block(bake_samples: int) -> str:
+    """Bevel + Smart UV + Cycles COMBINED bake to per-object lightmap PNGs +
+    rewire materials to drive baked color through Emission. Inserted between
+    the lighting setup and the render-config block."""
+    return f"""
+# --- B2 polish pass: bevel + smart UV + lightmap bake ---
+bpy.context.view_layer.objects.active = walls_obj
+bev = walls_obj.modifiers.new(name="Bevel", type='BEVEL')
+bev.width = 0.06
+bev.segments = 2
+bev.limit_method = 'ANGLE'
+bev.angle_limit = radians(30)
+bpy.ops.object.modifier_apply(modifier="Bevel")
+
+def _unwrap(obj, angle=66.0, margin=0.02):
+    bpy.context.view_layer.objects.active = obj
+    bpy.ops.object.select_all(action='DESELECT')
+    obj.select_set(True)
+    bpy.ops.object.mode_set(mode='EDIT')
+    bpy.ops.mesh.select_all(action='SELECT')
+    bpy.ops.uv.smart_project(angle_limit=radians(angle), island_margin=margin)
+    bpy.ops.object.mode_set(mode='OBJECT')
+
+_unwrap(walls_obj)
+_unwrap(floor)
+
+walls_lm = bpy.data.images.new("Walls_Lightmap", 1024, 1024, alpha=False, float_buffer=False)
+floor_lm = bpy.data.images.new("Floor_Lightmap", 512, 512, alpha=False, float_buffer=False)
+
+def _add_bake_target(mat, image, name):
+    nodes = mat.node_tree.nodes
+    for n in list(nodes):
+        if n.name.startswith("BakeTarget"):
+            nodes.remove(n)
+    tex = nodes.new("ShaderNodeTexImage")
+    tex.name = f"BakeTarget_{{name}}"
+    tex.image = image
+    nodes.active = tex
+    return tex
+
+bn_walls = _add_bake_target(mat_wall, walls_lm, "Walls")
+bn_floor = _add_bake_target(mat_floor, floor_lm, "Floor")
+
+bake_scene = bpy.context.scene
+bake_scene.render.engine = 'CYCLES'
+bake_scene.cycles.device = 'CPU'
+bake_scene.cycles.samples = {bake_samples}
+bake_scene.cycles.bake_type = 'COMBINED'
+bake_scene.render.bake.use_pass_direct = True
+bake_scene.render.bake.use_pass_indirect = True
+bake_scene.render.bake.margin = 16
+bake_scene.render.bake.use_clear = True
+bake_scene.render.bake.use_selected_to_active = False
+
+bpy.ops.object.select_all(action='DESELECT')
+walls_obj.select_set(True)
+floor.select_set(True)
+bpy.context.view_layer.objects.active = walls_obj
+print("[render_map] starting bake...")
+bpy.ops.object.bake(type='COMBINED')
+print("[render_map] bake done.")
+
+walls_lm_path = os.path.join(OUT_DIR, f"{{MAP_NAME}}.walls_lightmap.png")
+floor_lm_path = os.path.join(OUT_DIR, f"{{MAP_NAME}}.floor_lightmap.png")
+walls_lm.filepath_raw = walls_lm_path
+walls_lm.file_format = 'PNG'; walls_lm.save()
+floor_lm.filepath_raw = floor_lm_path
+floor_lm.file_format = 'PNG'; floor_lm.save()
+
+def _wire_emission(mat, bake_node):
+    nt = mat.node_tree
+    bsdf = nt.nodes.get("Principled BSDF")
+    if not (bsdf and bake_node): return
+    for link in list(nt.links):
+        if link.to_socket == bsdf.inputs["Base Color"]:
+            nt.links.remove(link)
+    bsdf.inputs["Base Color"].default_value = (0, 0, 0, 1)
+    bsdf.inputs["Roughness"].default_value = 1.0
+    nt.links.new(bake_node.outputs["Color"], bsdf.inputs["Emission Color"])
+    bsdf.inputs["Emission Strength"].default_value = 1.0
+
+_wire_emission(mat_wall, bn_walls)
+_wire_emission(mat_floor, bn_floor)
+
+# Dim runtime lighting since baked image carries the light
+sun.data.energy = 0.5
+bg.inputs[1].default_value = 0.1
+""".strip()
+
+
+def _build_fbx_block() -> str:
+    """Export the baked scene as an FBX with embedded textures into the map dir."""
+    return r"""
+# --- B2 FBX export ---
+fbx_path = os.path.join(OUT_DIR, f"{MAP_NAME}_baked.fbx")
+bpy.ops.object.select_all(action='DESELECT')
+for _o in bpy.context.scene.objects:
+    if _o.type == 'MESH':
+        _o.select_set(True)
+bpy.ops.export_scene.fbx(
+    filepath=fbx_path,
+    use_selection=True,
+    apply_scale_options='FBX_SCALE_UNITS',
+    object_types={'MESH'},
+    use_mesh_modifiers=True,
+    mesh_smooth_type='FACE',
+    add_leaf_bones=False,
+    bake_anim=False,
+    path_mode='COPY',
+    embed_textures=True,
+)
+print(f"[render_map] FBX -> {fbx_path}")
+""".strip()
+
+
 def find_layout_png(map_dir: str) -> tuple[str, str]:
     """Return (map_name, layout_png_abs_path) by inspecting the directory."""
     map_dir = os.path.abspath(map_dir)
@@ -80,8 +195,16 @@ def find_layout_png(map_dir: str) -> tuple[str, str]:
 
 def build_blender_script(layout_png: str, out_dir: str, map_name: str,
                          minimap_size: int, thumb_w: int, thumb_h: int,
-                         samples: int) -> str:
-    """Build the inline Blender script. Substitutes paths + ints; no untrusted input is allowed."""
+                         samples: int, bake: bool, bake_samples: int) -> str:
+    """Build the inline Blender script. Substitutes paths + ints; no untrusted input is allowed.
+
+    When `bake=True`, the script also: applies a Bevel modifier on walls, Smart UV unwraps
+    walls + floor, runs a Cycles COMBINED bake to per-object lightmap PNGs, wires the bake
+    into Emission so it shows as final lit color, and exports a *_baked.fbx with embedded
+    textures into the map dir.
+    """
+    bake_block = _build_bake_block(bake_samples) if bake else ""
+    fbx_block = _build_fbx_block() if bake else ""
     return f"""
 import bpy, bmesh, os
 from math import radians
@@ -201,7 +324,7 @@ world.use_nodes = True
 bg = world.node_tree.nodes.get("Background")
 bg.inputs[0].default_value = (0.55, 0.65, 0.78, 1.0)
 bg.inputs[1].default_value = 0.4
-
+{bake_block}
 # --- Render config ---
 scene = bpy.context.scene
 scene.render.engine = 'CYCLES'
@@ -242,7 +365,7 @@ scene.render.resolution_y = {thumb_h}
 thumb_path = os.path.join(OUT_DIR, f"{{MAP_NAME}}.thumb.png")
 scene.render.filepath = thumb_path
 bpy.ops.render.render(write_still=True)
-
+{fbx_block}
 print(f"[render_map] built {{len(spawn_positions)}} spawns, {{len(wall_mesh.vertices)}} wall verts")
 print(f"[render_map] minimap -> {{mini_path}}")
 print(f"[render_map] thumb   -> {{thumb_path}}")
@@ -257,7 +380,13 @@ def main() -> int:
     ap.add_argument("--thumb-w", type=int, default=1024)
     ap.add_argument("--thumb-h", type=int, default=768)
     ap.add_argument("--samples", type=int, default=64,
-                    help="Cycles samples per pixel (lower = faster, noisier)")
+                    help="Cycles samples per pixel for the final render (lower = faster, noisier)")
+    ap.add_argument("--bake", action="store_true",
+                    help="Run the B2 polish pass: bevel walls, Smart UV unwrap, Cycles lightmap "
+                         "bake to per-object PNGs, rewire materials to Emission, and export "
+                         "<map>_baked.fbx with embedded textures.")
+    ap.add_argument("--bake-samples", type=int, default=128,
+                    help="Cycles samples for the bake pass (only used with --bake)")
     args = ap.parse_args()
 
     map_name, layout_png = find_layout_png(args.map_dir)
@@ -274,7 +403,7 @@ def main() -> int:
 
     code = build_blender_script(layout_png, out_dir, map_name,
                                 args.minimap_size, args.thumb_w, args.thumb_h,
-                                args.samples)
+                                args.samples, args.bake, args.bake_samples)
     print(f"[render_map] sending execute_code ({len(code)} chars)")
     res = send("execute_code", {"code": code}, timeout=600.0)
     if res.get("status") != "success":
