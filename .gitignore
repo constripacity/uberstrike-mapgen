@@ -77,3 +77,6 @@ quantum_mapgen/DWAVE_APPLICATION.md
 
 # DesktopAgent local config (contains machine-specific paths)
 DesktopAgent/config/local.json
+
+# Blender smoke-test outputs (regeneratable; only inputs and driver are tracked)
+Tools/blender_smoke/smoke_result*.png
