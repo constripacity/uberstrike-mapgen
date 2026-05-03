@@ -163,7 +163,9 @@ WALL_INTERIOR_TUNED = Variant(
         Tile("Door",         "door",         ("floor", "wall",  "floor", "wall"),  0.35),
         Tile("Water",        "water",        ("water", "water", "water", "water"), 0.1),
         Tile("Bridge",       "bridge",       ("floor", "water", "floor", "water"), 0.1),
-        Tile("Spawn",        "spawn",        ("floor", "floor", "floor", "floor"), 0.15),
+        # Spawn weight tiny: arena generator places spawns via constraints;
+        # don't let WFC sprinkle organic spawns and tank Spawn Balance.
+        Tile("Spawn",        "spawn",        ("floor", "floor", "floor", "floor"), 0.001),
         Tile("WallInterior", "wall_interior", ("wall", "floor", "wall", "void"),  0.6),
     ],
     rotated_types={"Wall", "WallCorner", "WallT", "WallEnd", "Door", "Bridge", "WallInterior"},

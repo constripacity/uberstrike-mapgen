@@ -1957,16 +1957,25 @@ public static void BuildFromPNGPath(string fullPathOrAssetPath, float metersPerP
         {
             var constraints = new Dictionary<Vector2Int, WFCTileType>();
 
-            for (int x = 0; x < tex.width; x++)
+            // Edges are Wall, corners are WallCorner. Constraining corners
+            // to plain Wall is unsolvable: the Wall tile only has wall
+            // sockets on N+S (or E+W after rotation), but a corner cell
+            // needs wall sockets on two adjacent edges to mate with both
+            // border runs. (Same fix as GenerateArenaLayout.)
+            for (int x = 1; x < tex.width - 1; x++)
             {
                 constraints[new Vector2Int(x, 0)] = WFCTileType.Wall;
                 constraints[new Vector2Int(x, tex.height - 1)] = WFCTileType.Wall;
             }
-            for (int y = 0; y < tex.height; y++)
+            for (int y = 1; y < tex.height - 1; y++)
             {
                 constraints[new Vector2Int(0, y)] = WFCTileType.Wall;
                 constraints[new Vector2Int(tex.width - 1, y)] = WFCTileType.Wall;
             }
+            constraints[new Vector2Int(0, 0)] = WFCTileType.WallCorner;
+            constraints[new Vector2Int(tex.width - 1, 0)] = WFCTileType.WallCorner;
+            constraints[new Vector2Int(0, tex.height - 1)] = WFCTileType.WallCorner;
+            constraints[new Vector2Int(tex.width - 1, tex.height - 1)] = WFCTileType.WallCorner;
 
             var px = tex.GetPixels32();
             for (int y = 0; y < tex.height; y++)

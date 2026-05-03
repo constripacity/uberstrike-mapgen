@@ -68,7 +68,11 @@ public class WFCCore
         new Tile(WFCTileType.Door,         "door",          new[] {"floor", "wall",  "floor", "wall"},  0.35f),
         new Tile(WFCTileType.Water,        "water",         new[] {"water", "water", "water", "water"}, 0.1f),
         new Tile(WFCTileType.Bridge,       "bridge",        new[] {"floor", "water", "floor", "water"}, 0.1f),
-        new Tile(WFCTileType.Spawn,        "spawn",         new[] {"floor", "floor", "floor", "floor"}, 0.15f),
+        // Spawn weight is intentionally tiny: the arena generator places
+        // spawns via explicit constraints, and we don't want the WFC to
+        // sprinkle organic Spawn cells across the map (would flood the
+        // result with 15-20+ markers and tank Spawn Balance).
+        new Tile(WFCTileType.Spawn,        "spawn",         new[] {"floor", "floor", "floor", "floor"}, 0.001f),
         new Tile(WFCTileType.WallInterior, "wall_interior", new[] {"wall",  "floor", "wall",  "void"},  0.6f),
     };
 
