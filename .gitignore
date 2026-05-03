@@ -80,3 +80,6 @@ DesktopAgent/config/local.json
 
 # Blender smoke-test outputs (regeneratable; only inputs and driver are tracked)
 Tools/blender_smoke/smoke_result*.png
+
+# WFC harness output (regenerated on demand by Tools/MapGen/wfc_harness.py)
+Tools/MapGen/_harness_out/

@@ -39,6 +39,14 @@ Use the **Generate Lighting From Layout** option when you only need to stamp a q
 - The main blueprint importer auto-runs a lightweight WFC pre-pass to repair impossible geometry (floating walls, disconnected floors) while honoring spawn/water constraints.
 - Headless generation is available via `python DesktopAgent/agent/tools/wave_function_collapse.py --width 64 --height 64 --spawns 2 --output wfc_map.png`.
 
+### WFC Tileset Test Harness
+A pure-Python harness mirrors `WFCCore.cs` so tileset/socket changes can be A/B tested outside Unity. Edit `Tools/MapGen/wfc_harness.py` to add a new `Variant`, then:
+```powershell
+python Tools/MapGen/wfc_harness.py --variant all --size 16 --seeds 16
+python Tools/MapGen/wfc_harness.py --variant wall_interior_tuned --size 32 --seeds 16
+```
+Outputs PNGs under `Tools/MapGen/_harness_out/<variant>/`. Reports per-variant convergence rate, contradiction/disconnect counts, average restarts, and tile-mix percentages. Use this before touching `WFCCore.BaseTiles` or `SocketsMatch` so weight or socket changes are validated against a wide seed sweep first.
+
 ## Graph Flow Analysis
 - Run **Tools → UberStrike → MapGen → Graph Flow Analyzer** to evaluate chokepoints, dead zones, heat maps, spawn balance, circulation loops, and exposure maps from the live scene.
 - The analyzer can auto-warn when spawn balance is poor; use it alongside PrefabPlacementAI or a regeneration pass to rebalance.

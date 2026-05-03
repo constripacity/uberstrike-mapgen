@@ -12,5 +12,6 @@ public enum WFCTileType
     Door,
     Water,
     Bridge,
-    Spawn
+    Spawn,
+    WallInterior
 }

@@ -52,19 +52,24 @@ public class WFCCore
     }
 
     // ---------------------------------------------------------- Base tileset
-    // Matches Python _BASE_TILES exactly: type, id, sockets (N,E,S,W), weight
+    // Floor-biased weights produce open arena layouts. WallInterior bridges
+    // the floor<->wall socket gap that the original 10-tile vocab couldn't
+    // span (no socket bridged "floor" to "wall" without a Door, so floor
+    // regions could never abut walls and the solver always contradicted).
+    // Validated in Tools/MapGen/wfc_harness.py — wall_interior_tuned variant.
     private static readonly Tile[] BaseTiles =
     {
-        new Tile(WFCTileType.Void,       "void",        new[] {"void",  "void",  "void",  "void"},  0.05f),
-        new Tile(WFCTileType.Floor,      "floor",       new[] {"floor", "floor", "floor", "floor"}, 5.0f),
-        new Tile(WFCTileType.Wall,       "wall",        new[] {"wall",  "void",  "wall",  "void"},  3.0f),
-        new Tile(WFCTileType.WallCorner, "wall_corner", new[] {"void",  "void",  "wall",  "wall"},  2.0f),
-        new Tile(WFCTileType.WallT,      "wall_t",      new[] {"void",  "wall",  "wall",  "wall"},  1.5f),
-        new Tile(WFCTileType.WallEnd,    "wall_end",    new[] {"void",  "void",  "wall",  "void"},  1.0f),
-        new Tile(WFCTileType.Door,       "door",        new[] {"floor", "wall",  "floor", "wall"},  0.8f),
-        new Tile(WFCTileType.Water,      "water",       new[] {"water", "water", "water", "water"}, 0.4f),
-        new Tile(WFCTileType.Bridge,     "bridge",      new[] {"floor", "water", "floor", "water"}, 0.35f),
-        new Tile(WFCTileType.Spawn,      "spawn",       new[] {"floor", "floor", "floor", "floor"}, 0.15f),
+        new Tile(WFCTileType.Void,         "void",          new[] {"void",  "void",  "void",  "void"},  0.02f),
+        new Tile(WFCTileType.Floor,        "floor",         new[] {"floor", "floor", "floor", "floor"}, 18.0f),
+        new Tile(WFCTileType.Wall,         "wall",          new[] {"wall",  "void",  "wall",  "void"},  0.6f),
+        new Tile(WFCTileType.WallCorner,   "wall_corner",   new[] {"void",  "void",  "wall",  "wall"},  0.4f),
+        new Tile(WFCTileType.WallT,        "wall_t",        new[] {"void",  "wall",  "wall",  "wall"},  0.25f),
+        new Tile(WFCTileType.WallEnd,      "wall_end",      new[] {"void",  "void",  "wall",  "void"},  0.2f),
+        new Tile(WFCTileType.Door,         "door",          new[] {"floor", "wall",  "floor", "wall"},  0.35f),
+        new Tile(WFCTileType.Water,        "water",         new[] {"water", "water", "water", "water"}, 0.1f),
+        new Tile(WFCTileType.Bridge,       "bridge",        new[] {"floor", "water", "floor", "water"}, 0.1f),
+        new Tile(WFCTileType.Spawn,        "spawn",         new[] {"floor", "floor", "floor", "floor"}, 0.15f),
+        new Tile(WFCTileType.WallInterior, "wall_interior", new[] {"wall",  "floor", "wall",  "void"},  0.6f),
     };
 
     // Direction offsets: N, E, S, W  (dx, dy, direction char, opposite index for socket matching)
@@ -121,7 +126,8 @@ public class WFCCore
             // Asymmetric tiles get rotation variants
             if (b.Type == WFCTileType.Wall || b.Type == WFCTileType.WallCorner ||
                 b.Type == WFCTileType.WallT || b.Type == WFCTileType.WallEnd ||
-                b.Type == WFCTileType.Door || b.Type == WFCTileType.Bridge)
+                b.Type == WFCTileType.Door || b.Type == WFCTileType.Bridge ||
+                b.Type == WFCTileType.WallInterior)
             {
                 list.Add(b.Rotate(1));
                 list.Add(b.Rotate(2));
@@ -434,6 +440,7 @@ public class WFCCore
                 }
             }
         }
+        SyncSingletons();
 
         int steps = 0;
         while (steps < maxSteps)
@@ -447,6 +454,8 @@ public class WFCCore
 
             if (!Propagate(collapsed))
                 return false; // contradiction during propagate
+
+            SyncSingletons();
         }
 
         // Ran out of steps -- treat as failure if not fully collapsed
@@ -459,6 +468,22 @@ public class WFCCore
             for (int x = 0; x < _width; x++)
                 if (_grid[y, x] == -1) return true;
         return false;
+    }
+
+    // Constraint application leaves cells with wave={one_idx} but grid=-1.
+    // Observe's Entropy() returns +Inf for count<=1 so those cells are never
+    // selected, and the solver spins until max_steps. Sync them so the loop
+    // can terminate.
+    private void SyncSingletons()
+    {
+        for (int y = 0; y < _height; y++)
+        {
+            for (int x = 0; x < _width; x++)
+            {
+                if (_grid[y, x] == -1 && _wave[y][x].Count == 1)
+                    _grid[y, x] = _wave[y][x].First();
+            }
+        }
     }
 
     // ----------------------------------------------------------- Connectivity
@@ -595,7 +620,8 @@ public class WFCCore
                     c = _tiles[idx].Type switch
                     {
                         WFCTileType.Wall or WFCTileType.WallCorner or
-                        WFCTileType.WallT or WFCTileType.WallEnd => new Color32(0, 0, 0, 255),
+                        WFCTileType.WallT or WFCTileType.WallEnd or
+                        WFCTileType.WallInterior                 => new Color32(0, 0, 0, 255),
                         WFCTileType.Floor or WFCTileType.Door    => new Color32(128, 128, 128, 255),
                         WFCTileType.Water                        => new Color32(0, 0, 255, 255),
                         WFCTileType.Spawn                        => new Color32(255, 255, 0, 255),

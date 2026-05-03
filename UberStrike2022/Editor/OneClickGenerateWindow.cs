@@ -249,15 +249,13 @@ public class OneClickGenerateWindow : EditorWindow
     // --------------------------------------------------------------- Helpers
 
     /// <summary>
-    /// WFC arena generation with cascading fallbacks. The standalone
-    /// GenerateArenaLayout helper in WFCCore deterministically contradicts at
-    /// corners (it forces every border cell to type Wall, but corners require
-    /// type WallCorner to satisfy adjacency on both edges); we route around it
-    /// rather than rewrite the core in this session.
+    /// WFC arena generation with cascading fallbacks. Strategy 1 (real WFC) is
+    /// expected to converge after the WallInterior tile + floor-biased weight
+    /// rework; strategies 2 and 3 stay as safety nets.
     /// </summary>
     private static Color[] GenerateLayoutColors(int size, int seed, int spawns, out string strategy)
     {
-        // Strategy 1: GenerateArenaLayout (kept for the day someone fixes the core).
+        // Strategy 1: GenerateArenaLayout — the canonical path.
         var wfc = new WFCCore(size, size, seed) { MaxRestarts = 5 };
         if (wfc.GenerateArenaLayout(spawns, maxRestarts: 5))
         {
