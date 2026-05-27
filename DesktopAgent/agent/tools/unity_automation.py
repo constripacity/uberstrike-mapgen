@@ -258,9 +258,13 @@ class UnityAutomation:
         # Before launching Unity, ensure there are no conflicting Unity.exe processes for the same project.
         if sys.platform == "win32":
             try:
-                # Use a safe, well-formed WMIC command string
-                wmic_cmd = "wmic process where \"name='Unity.exe'\" get ProcessId,CommandLine"
-                wmic = subprocess.run(wmic_cmd, capture_output=True, text=True, shell=True)
+                # Arg-list form (no shell) — the WMIC command has no user input,
+                # but dropping shell=True closes off command-injection regressions
+                # if anyone later refactors the process name to come from config.
+                wmic = subprocess.run(
+                    ["wmic", "process", "where", "name='Unity.exe'", "get", "ProcessId,CommandLine"],
+                    capture_output=True, text=True,
+                )
                 out = (wmic.stdout or "") + (wmic.stderr or "")
 
                 if self.project_path and self.project_path in out:
@@ -275,8 +279,12 @@ class UnityAutomation:
                                 await asyncio.sleep(0.5)
                                 break
                 else:
-                    # WMIC didn't reveal a matching command line. If any Unity.exe exists, refuse to start
-                    tasklist = subprocess.run('tasklist | findstr Unity.exe', capture_output=True, text=True, shell=True)
+                    # WMIC didn't reveal a matching command line. If any Unity.exe exists, refuse to start.
+                    # Pipe requires shell=True; arg is a hardcoded literal — DO NOT add user input here.
+                    tasklist = subprocess.run(
+                        'tasklist | findstr Unity.exe',
+                        capture_output=True, text=True, shell=True,
+                    )
                     if tasklist.stdout.strip():
                         return {"success": False, "error": "Unity.exe is already running. Please close existing instances before starting a new build."}
             except Exception as e:
