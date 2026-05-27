@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 from typing import Dict
 
-from flask import Flask, jsonify, render_template, request, send_file
+from flask import Flask, abort, jsonify, render_template, request, send_file
 from flask_socketio import SocketIO, emit
 from PIL import Image
 from werkzeug.utils import safe_join
@@ -21,7 +21,18 @@ from agent_v2.generator.layer_generator import AILayerGenerator  # noqa: E402
 from agent_v2.validator.stack_validator import StackValidator  # noqa: E402
 
 app = Flask(__name__, template_folder="templates")
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(
+    app,
+    cors_allowed_origins=["http://127.0.0.1:5000", "http://localhost:5000"],
+)
+
+
+@app.before_request
+def _localhost_only() -> None:
+    # Hard floor: refuse any request whose source isn't loopback, regardless of
+    # how the server was started. Protects against accidental 0.0.0.0 binds.
+    if request.remote_addr not in ("127.0.0.1", "::1"):
+        abort(403)
 
 STACK_DIR = Path("UberStrikeGen/Assets/_UberStrike/Blueprints/Stacks")
 STACK_DIR.mkdir(parents=True, exist_ok=True)
@@ -171,4 +182,4 @@ def handle_edit_pixel(data):
 
 
 if __name__ == "__main__":
-    socketio.run(app, host="0.0.0.0", port=5000, debug=True)
+    socketio.run(app, host="127.0.0.1", port=5000, debug=False)
